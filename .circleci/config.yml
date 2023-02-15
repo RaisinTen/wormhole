@@ -12,8 +12,8 @@ commands:
   build:
     steps:
       - run:
-          name: "Say hello"
-          command: "echo Hello, World!"
+          name: CMake build
+          command: cmake -S . -B build
 
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
