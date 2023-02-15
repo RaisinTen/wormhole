@@ -9,11 +9,26 @@ executors:
     resource_class: macos.x86.medium.gen2
 
 commands:
+  dependencies:
+    steps:
+      - restore_cache:
+          keys:
+            - v1-brew-{{ arch }}-{{ checksum "Brewfile" }}
+      - run:
+          name: Installing dependencies
+          command: brew bundle
+      - save_cache:
+          key: v1-brew-{{ arch }}-{{ checksum "Brewfile" }}
+          paths:
+            - /opt/homebrew/Library/Taps/homebrew/homebrew-bundle
+            - /usr/local/Homebrew/Library/Taps/homebrew/homebrew-bundle
+            - /Users/distiller/Library/Caches/Homebrew
+
   build:
     steps:
       - run:
-          name: "Say hello"
-          command: "echo Hello, World!"
+          name: CMake build
+          command: cmake -S . -B build
 
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
@@ -27,6 +42,7 @@ jobs:
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
       - checkout
+      - dependencies
       - build
 
 # Invoke jobs via workflows
