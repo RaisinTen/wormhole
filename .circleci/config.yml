@@ -11,9 +11,19 @@ executors:
 commands:
   dependencies:
     steps:
+      - restore_cache:
+          keys:
+            - v1-brew-{{ arch }}-{{ checksum "Brewfile" }}
       - run:
           name: Installing dependencies
           command: brew bundle
+      - save_cache:
+          key: v1-brew-{{ arch }}-{{ checksum "Brewfile" }}
+          paths:
+            - /opt/homebrew/Library/Taps/homebrew/homebrew-bundle
+            - /usr/local/Homebrew/Library/Taps/homebrew/homebrew-bundle
+            - /Users/distiller/Library/Caches/Homebrew
+
   build:
     steps:
       - run:
