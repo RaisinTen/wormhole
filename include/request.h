@@ -1,0 +1,17 @@
+#ifndef WORMHOLE_REQUEST_H_
+#define WORMHOLE_REQUEST_H_
+
+#include <string_view>
+
+namespace wormhole {
+
+struct Response {
+  char* data;
+  size_t size;
+};
+
+Response request(std::string_view url);
+
+} // namespace wormhole
+
+#endif // WORMHOLE_REQUEST_H_
