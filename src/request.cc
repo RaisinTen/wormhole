@@ -1,4 +1,4 @@
-#include <wormhole/include/request.h>
+#include <request.h>
 
 #include <curl/curl.h>
 
@@ -42,7 +42,7 @@ size_t write_data(void *ptr, size_t size, size_t nmemb, wormhole::Response *data
 
 namespace wormhole {
 
-Response request(std::string_view url) {
+Response request(const std::string_view url) {
   CURL *curl;
 
   Response data;
@@ -50,7 +50,7 @@ Response request(std::string_view url) {
   data.data = (char *) malloc(4096); /* reasonable size initial buffer */
   if(NULL == data.data) {
     fprintf(stderr, "Failed to allocate memory.\n");
-    return NULL;
+    return data;
   }
 
   data.data[0] = '\0';
@@ -59,7 +59,7 @@ Response request(std::string_view url) {
 
   curl = curl_easy_init();
   if (curl) {
-    curl_easy_setopt(curl, CURLOPT_URL, url);
+    curl_easy_setopt(curl, CURLOPT_URL, url.data());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
     res = curl_easy_perform(curl);
@@ -75,5 +75,3 @@ Response request(std::string_view url) {
 }
 
 } // namespace wormhole
-
-#endif // WORMHOLE_REQUEST_H_

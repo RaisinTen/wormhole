@@ -10,7 +10,7 @@ struct Response {
   size_t size;
 };
 
-Response request(std::string_view url);
+Response request(const std::string_view url);
 
 } // namespace wormhole
 
