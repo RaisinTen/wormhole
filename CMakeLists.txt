@@ -14,6 +14,10 @@ set_target_properties(libwormhole PROPERTIES PUBLIC_HEADER include/request.h)
 target_include_directories(libwormhole PRIVATE include)
 target_include_directories(libwormhole PRIVATE src)
 
+find_package(CURL REQUIRED)
+target_include_directories(libwormhole PRIVATE ${CURL_INCLUDE_DIR})
+target_link_libraries(libwormhole ${CURL_LIBRARIES})
+
 include(GNUInstallDirs)
 
 install(TARGETS libwormhole
