@@ -27,8 +27,11 @@ commands:
   build:
     steps:
       - run:
-          name: CMake build
+          name: CMake configure
           command: cmake -S . -B build
+      - run:
+          name: CMake build
+          command: cmake --build build
 
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
