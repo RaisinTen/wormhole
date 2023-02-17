@@ -8,8 +8,14 @@ A custom networking layer for Postman.
 brew bundle
 ```
 
-## Build
+## Configure
 
 ```sh
 cmake -S . -B build
+```
+
+## Build
+
+```sh
+cmake --build build
 ```
