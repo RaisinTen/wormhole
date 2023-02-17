@@ -29,6 +29,7 @@ commands:
       - run:
           name: CMake configure
           command: cmake -S . -B build
+      - run:
           name: CMake build
           command: cmake --build build
 
