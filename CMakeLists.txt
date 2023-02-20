@@ -2,24 +2,24 @@ cmake_minimum_required(VERSION 3.21)
 
 project(wormhole VERSION 1.0.0 DESCRIPTION "A custom networking layer for Postman")
 
-add_library(libwormhole SHARED
+add_library(wormhole SHARED
   src/request.cc
   )
 
-set_target_properties(libwormhole PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(libwormhole PROPERTIES SOVERSION 1)
+set_target_properties(wormhole PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(wormhole PROPERTIES SOVERSION 1)
 
-set_target_properties(libwormhole PROPERTIES PUBLIC_HEADER include/request.h)
+set_target_properties(wormhole PROPERTIES PUBLIC_HEADER include/request.h)
 
-target_include_directories(libwormhole PRIVATE include)
-target_include_directories(libwormhole PRIVATE src)
+target_include_directories(wormhole PRIVATE include)
+target_include_directories(wormhole PRIVATE src)
 
 find_package(CURL REQUIRED)
-target_include_directories(libwormhole PRIVATE ${CURL_INCLUDE_DIR})
-target_link_libraries(libwormhole ${CURL_LIBRARIES})
+target_include_directories(wormhole PRIVATE ${CURL_INCLUDE_DIR})
+target_link_libraries(wormhole ${CURL_LIBRARIES})
 
 include(GNUInstallDirs)
 
-install(TARGETS libwormhole
+install(TARGETS wormhole
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
