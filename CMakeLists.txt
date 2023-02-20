@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.21)
 
 project(wormhole VERSION 1.0.0 DESCRIPTION "A custom networking layer for Postman")
 
+set(CMAKE_CXX_STANDARD 20)
+
 add_library(wormhole STATIC
   src/request.cc
   )
@@ -23,3 +25,5 @@ include(GNUInstallDirs)
 install(TARGETS wormhole
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+add_subdirectory(test)

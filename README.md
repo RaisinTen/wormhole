@@ -19,3 +19,9 @@ cmake -S . -B build
 ```sh
 cmake --build build
 ```
+
+## Test
+
+```sh
+build/test/request_unit_test
+```
