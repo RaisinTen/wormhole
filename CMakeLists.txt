@@ -26,4 +26,7 @@ install(TARGETS wormhole
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
+enable_testing()
+include("${PROJECT_SOURCE_DIR}/googletest.cmake")
+add_subdirectory(vendor/googletest)
 add_subdirectory(test)

@@ -1,3 +1,5 @@
-add_executable(request_unit_test request_unit_test.cc)
+add_executable(request_unit_test "${GTEST_MAIN}" request_unit_test.cc)
 target_include_directories(request_unit_test PRIVATE ../include)
+target_link_libraries(request_unit_test PRIVATE gtest)
 target_link_libraries(request_unit_test PRIVATE wormhole)
+add_googletest(request request_unit_test)
