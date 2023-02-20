@@ -4,7 +4,7 @@
 
 #include <string>
 
-Napi::String Request(const Napi::CallbackInfo& info) {
+Napi::String Request(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
 
   if (!info[0].IsString()) {
