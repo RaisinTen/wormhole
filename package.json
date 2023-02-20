@@ -1,0 +1,31 @@
+{
+  "name": "wormhole",
+  "version": "1.0.0",
+  "description": "A custom network layer for Postman.",
+  "main": "index.js",
+  "directories": {
+    "test": "package_tests"
+  },
+  "scripts": {
+    "build": "node-gyp rebuild",
+    "clean": "node-gyp clean",
+    "test": "mocha package_tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/postmanlabs/wormhole.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/postmanlabs/wormhole/issues"
+  },
+  "homepage": "https://github.com/postmanlabs/wormhole#readme",
+  "devDependencies": {
+    "mocha": "^10.2.0",
+    "node-gyp": "^9.3.1"
+  },
+  "dependencies": {
+    "node-addon-api": "^6.0.0"
+  }
+}
