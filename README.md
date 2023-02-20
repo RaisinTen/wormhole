@@ -74,19 +74,25 @@ brew bundle
 #### Configure
 
 ```sh
-cmake -S . -B cmake
+cmake -S . -B native_build
 ```
 
 #### Build
 
 ```sh
-cmake --build cmake
+cmake --build native_build
 ```
 
 #### Test
 
 ```sh
-cmake/test/request_unit_test
+native_build/test/request_unit_test
+```
+
+#### Format
+
+```sh
+cmake --build native_build --target clang_format
 ```
 
 ### NPM package
