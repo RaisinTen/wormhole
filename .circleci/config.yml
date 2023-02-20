@@ -2,6 +2,9 @@
 # See: https://circleci.com/docs/2.0/configuration-reference
 version: 2.1
 
+orbs:
+  node: circleci/node@4.0.0
+
 executors:
   macos-x64:
     macos:
@@ -23,6 +26,8 @@ commands:
             - /opt/homebrew/Library/Taps/homebrew/homebrew-bundle
             - /usr/local/Homebrew/Library/Taps/homebrew/homebrew-bundle
             - /Users/distiller/Library/Caches/Homebrew
+      - node/install:
+          node-version: "19.6.1"
       - run:
           name: Installing NPM dependencies
           command: npm ci
