@@ -21,5 +21,8 @@
   "homepage": "https://github.com/postmanlabs/wormhole#readme",
   "devDependencies": {
     "node-gyp": "^9.3.1"
+  },
+  "dependencies": {
+    "node-addon-api": "^6.0.0"
   }
 }
