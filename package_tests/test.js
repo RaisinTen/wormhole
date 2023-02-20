@@ -1,4 +1,3 @@
-const { test } = require('node:test');
 const {
   deepStrictEqual,
   strictEqual,
@@ -6,19 +5,19 @@ const {
 
 const wormhole = require('..');
 
-test('Basic HTTP test', async (t) => {
+describe('Basic HTTP test', async (t) => {
   const response = wormhole.request('https://postman-echo.com/get');
   const responseJSON = JSON.parse(response);
 
-  await t.test('headers', (t) => {
+  it('headers', () => {
     strictEqual(typeof responseJSON.headers, 'object');
   });
 
-  await t.test('args', (t) => {
+  it('args', () => {
     deepStrictEqual(responseJSON.args, {});
   });
 
-  await t.test('url', (t) => {
+  it('url', () => {
     strictEqual(responseJSON.url, 'https://postman-echo.com/get');
   });
 });
