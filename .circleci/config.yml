@@ -33,6 +33,12 @@ commands:
           name: CMake build
           command: cmake --build build
 
+  test:
+    steps:
+      - run:
+          name: Test
+          command: build/test/request_unit_test
+
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
@@ -47,6 +53,7 @@ jobs:
       - checkout
       - dependencies
       - build
+      - test
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
