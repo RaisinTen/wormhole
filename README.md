@@ -2,46 +2,107 @@
 
 A custom networking layer for Postman.
 
-## C++ library
+## Use
 
-### Install dependencies
+### C++ library
+
+Compile with the static library, `cmake/libwormhole.a`, and libcurl, `-lcurl`,
+using:
+
+```sh
+clang++ \
+  <entry/point.cc> \
+  -I<path/to/wormhole/include/directory> \
+  <path/to/wormhole/cmake/libwormhole.a> \
+  -lcurl
+```
+
+```cc
+#include <request.h>
+
+...
+  wormhole::Response res = wormhole::request("https://postman-echo.com/get");
+  std::string response_string(res.data, res.size);
+  std::cout << response_string << std::endl;
+...
+
+// Output:
+// {
+//   "args": {},
+//   "headers": {
+//     "x-forwarded-proto": "https",
+//     "x-forwarded-port": "443",
+//     "host": "postman-echo.com",
+//     "x-amzn-trace-id": "Root=1-63f373f3-73f715716ba031264ea53935",
+//     "accept": "*/*"
+//   },
+//   "url": "https://postman-echo.com/get"
+// }
+```
+
+### NPM package
+
+```js
+const wormhole = require('.');
+const response = wormhole.request('https://postman-echo.com/get');
+console.log(response);
+
+// Output:
+// {
+//   "args": {},
+//   "headers": {
+//     "x-forwarded-proto": "https",
+//     "x-forwarded-port": "443",
+//     "host": "postman-echo.com",
+//     "x-amzn-trace-id": "Root=1-63f373f3-73f715716ba031264ea53935",
+//     "accept": "*/*"
+//   },
+//   "url": "https://postman-echo.com/get"
+// }
+```
+
+## Building
+
+### C++ library
+
+#### Install dependencies
 
 ```sh
 brew bundle
 ```
 
-### Configure
+#### Configure
 
 ```sh
 cmake -S . -B cmake
 ```
 
-### Build
+#### Build
 
 ```sh
 cmake --build cmake
 ```
 
-### Test
+#### Test
 
 ```sh
 cmake/test/request_unit_test
 ```
 
-## NPM package
+### NPM package
 
-### Install dependencies
+#### Install dependencies
 
 ```sh
 npm ci
 ```
-### Build
+#### Build
 
 ```sh
 npm run build
 ```
 
-### Test
+#### Test
 
 ```sh
 npm test
