@@ -13,13 +13,13 @@ brew bundle
 ### Configure
 
 ```sh
-cmake -S . -B build
+cmake -S . -B cmake
 ```
 
 ### Build
 
 ```sh
-cmake --build build
+cmake --build cmake
 ```
 
 ### Test
