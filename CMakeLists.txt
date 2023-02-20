@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.21)
 
 project(wormhole VERSION 1.0.0 DESCRIPTION "A custom networking layer for Postman")
 
-add_library(wormhole SHARED
+add_library(wormhole STATIC
   src/request.cc
   )
 
