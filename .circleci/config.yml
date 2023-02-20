@@ -43,7 +43,7 @@ commands:
     steps:
       - run:
           name: Test
-          command: build/test/request_unit_test
+          command: cmake/test/request_unit_test
       - run:
           name: Package test
           command: npm test

@@ -25,7 +25,7 @@ cmake --build cmake
 ### Test
 
 ```sh
-build/test/request_unit_test
+cmake/test/request_unit_test
 ```
 
 ## NPM package
