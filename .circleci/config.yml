@@ -29,8 +29,8 @@ commands:
       - node/install:
           node-version: "19.6.1"
       - run:
-          name: Installing Node.js v19.6.1
-          command: nvm install 19.6.1
+          name: Use Node.js v19.6.1
+          command: nvm use 19.6.1
       - run:
           name: Installing NPM dependencies
           command: npm ci
