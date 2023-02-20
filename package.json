@@ -18,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/postmanlabs/wormhole/issues"
   },
-  "homepage": "https://github.com/postmanlabs/wormhole#readme"
+  "homepage": "https://github.com/postmanlabs/wormhole#readme",
+  "devDependencies": {
+    "node-gyp": "^9.3.1"
+  }
 }
