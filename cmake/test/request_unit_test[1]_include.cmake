@@ -1,0 +1,5 @@
+if(EXISTS "/Users/raisinten/Desktop/git/wormhole/cmake/test/request_unit_test[1]_tests.cmake")
+  include("/Users/raisinten/Desktop/git/wormhole/cmake/test/request_unit_test[1]_tests.cmake")
+else()
+  add_test(request_unit_test_NOT_BUILT request_unit_test_NOT_BUILT)
+endif()

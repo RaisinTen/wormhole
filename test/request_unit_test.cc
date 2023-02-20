@@ -1,14 +1,11 @@
 #include <request.h>
 
+#include <gtest/gtest.h>
+
 #include <string>
 
-int main() {
+TEST(http, http_basic) {
   wormhole::Response res = wormhole::request("https://postman-echo.com/get");
   std::string response_string(res.data, res.size);
-
-  if (response_string.find(R"("url": "https://postman-echo.com/get")") == std::string::npos) {
-    exit(1);
-  }
-
-  return 0;
+  ASSERT_NE(response_string.find(R"("url": "https://postman-echo.com/get")"), std::string::npos);
 }
