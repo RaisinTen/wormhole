@@ -6,13 +6,13 @@
     "sources": [
       "binding/binding.cc",
       "include/request.h",
+      "src/request.cc",
     ],
     'include_dirs': [
       "<!@(node -p \"require('node-addon-api').include\")",
       "include",
     ],
     'libraries': [
-      "build/libwormhole.a",
       "-lcurl",
     ],
     'dependencies': [
