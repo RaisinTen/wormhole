@@ -11,4 +11,4 @@ CTestTestfile.cmake
 _deps
 build
 node_modules
-cmake
+native_build
