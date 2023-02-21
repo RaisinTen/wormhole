@@ -31,19 +31,25 @@ commands:
     steps:
       - run:
           name: CMake configure
-          command: cmake -S . -B cmake
+          command: cmake -S . -B native_build
       - run:
           name: CMake build
-          command: cmake --build cmake
+          command: cmake --build native_build
       - run:
           name: Package build
           command: npm run build
+
+  format:
+    steps:
+      - run:
+          name: Format
+          command: cmake --build native_build --target clang_format_test
 
   test:
     steps:
       - run:
           name: Test
-          command: cmake/test/request_unit_test
+          command: native_build/test/request_unit_test
       - run:
           name: Package test
           command: npm test
@@ -62,6 +68,7 @@ jobs:
       - checkout
       - dependencies
       - build
+      - format
       - test
 
 # Invoke jobs via workflows

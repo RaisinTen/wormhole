@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.21)
-
 project(wormhole VERSION 1.0.0 DESCRIPTION "A custom networking layer for Postman")
 
 set(CMAKE_CXX_STANDARD 20)
@@ -27,6 +26,13 @@ install(TARGETS wormhole
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 enable_testing()
-include("${PROJECT_SOURCE_DIR}/googletest.cmake")
+include("${PROJECT_SOURCE_DIR}/cmake/googletest.cmake")
 add_subdirectory(vendor/googletest)
 add_subdirectory(test)
+
+# Checks
+file(GLOB_RECURSE WORMHOLE_CXX_SOURCE_FILES
+  src/*.cc src/*.h
+  test/*.cc test/*.h
+  binding/*.cc)
+include("${PROJECT_SOURCE_DIR}/cmake/clang-format.cmake")
