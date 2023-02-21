@@ -1,0 +1,13 @@
+.circleci/
+Brewfile
+CMakeLists.txt
+DEPENDENCIES
+Testing/
+build/
+cmake/
+googletest.cmake
+native_build/
+node_modules/
+package_tests/
+test/
+vendor/
