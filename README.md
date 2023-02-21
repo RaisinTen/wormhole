@@ -79,28 +79,22 @@ console.log(response);
 brew bundle
 ```
 
-#### Configure
-
-```sh
-cmake -S . -B native_build
-```
-
 #### Build
 
 ```sh
-cmake --build native_build
+npm run cmake:build
 ```
 
 #### Test
 
 ```sh
-native_build/test/request_unit_test
+npm run cmake:test
 ```
 
 #### Format
 
 ```sh
-cmake --build native_build --target clang_format
+npm run cmake:format
 ```
 
 ### NPM package

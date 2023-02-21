@@ -30,11 +30,8 @@ commands:
   build:
     steps:
       - run:
-          name: CMake configure
-          command: cmake -S . -B native_build
-      - run:
-          name: CMake build
-          command: cmake --build native_build
+          name: Native build
+          command: npm run cmake:build
       - run:
           name: Package build
           command: npm run build
@@ -42,16 +39,16 @@ commands:
   format:
     steps:
       - run:
-          name: Format
-          command: cmake --build native_build --target clang_format_test
+          name: Native format
+          command: npm run cmake:format
 
   test:
     steps:
       - run:
-          name: Test
-          command: native_build/test/request_unit_test
+          name: Native tests
+          command: npm run cmake:test
       - run:
-          name: Package test
+          name: Package tests
           command: npm test
 
 # Define a job to be invoked later in a workflow.

@@ -9,7 +9,12 @@
   "scripts": {
     "build": "node-gyp rebuild",
     "clean": "node-gyp clean",
-    "test": "mocha package_tests"
+    "test": "mocha package_tests",
+    "cmake:build": "cmake -S . -B native_build && cmake --build native_build",
+    "cmake:format": "cmake --build native_build --target clang_format",
+    "cmake:test": "./native_build/test/request_unit_test",
+    "cmake:all": "npm run cmake:build && npm run cmake:format && npm run cmake:test",
+    "cmake:clean": "rm -rf native_build"
   },
   "repository": {
     "type": "git",
