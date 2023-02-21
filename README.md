@@ -42,8 +42,16 @@ clang++ \
 
 ### NPM package
 
+Download the package:
+
+```sh
+npm i @postman/wormhole
+```
+
+Use the package in your script:
+
 ```js
-const wormhole = require('.');
+const wormhole = require('@postman/wormhole');
 const response = wormhole.request('https://postman-echo.com/get');
 console.log(response);
 
