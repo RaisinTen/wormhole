@@ -30,6 +30,9 @@ commands:
   build:
     steps:
       - run:
+          name: Build curl
+          command: ./scripts/build.sh
+      - run:
           name: CMake configure
           command: cmake -S . -B native_build
       - run:
@@ -47,6 +50,9 @@ commands:
 
   test:
     steps:
+      - run:
+          name: Curl test
+          command: ./curl_build/vendor_install/bin/curl --http3 https://postman-echo.com/get
       - run:
           name: Test
           command: native_build/test/request_unit_test
