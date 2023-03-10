@@ -12,3 +12,4 @@ _deps
 build
 node_modules
 native_build
+curl_build
