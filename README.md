@@ -71,6 +71,20 @@ console.log(response);
 
 ## Building
 
+### Curl with HTTP3 support
+
+#### Build
+
+```sh
+./scripts/build.sh
+```
+
+#### Test
+
+```sh
+./curl_build/vendor_install/bin/curl --http3 https://postman-echo.com/get
+```
+
 ### C++ library
 
 #### Install dependencies

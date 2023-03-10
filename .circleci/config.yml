@@ -30,6 +30,9 @@ commands:
   build:
     steps:
       - run:
+          name: Build curl
+          command: ./scripts/build.sh
+      - run:
           name: Native build
           command: npm run cmake:build
       - run:
@@ -44,6 +47,9 @@ commands:
 
   test:
     steps:
+      - run:
+          name: Curl test
+          command: ./curl_build/vendor_install/bin/curl --http3 https://postman-echo.com/get
       - run:
           name: Native tests
           command: npm run cmake:test
