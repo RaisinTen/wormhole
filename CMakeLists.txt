@@ -14,10 +14,7 @@ set_target_properties(wormhole PROPERTIES PUBLIC_HEADER include/request.h)
 
 target_include_directories(wormhole PRIVATE include)
 target_include_directories(wormhole PRIVATE src)
-
-find_package(CURL REQUIRED)
-target_include_directories(wormhole PRIVATE ${CURL_INCLUDE_DIR})
-target_link_libraries(wormhole ${CURL_LIBRARIES})
+target_include_directories(wormhole PRIVATE curl_build/vendor_install/include)
 
 include(GNUInstallDirs)
 

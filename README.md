@@ -14,6 +14,7 @@ clang++ \
   <entry/point.cc> \
   -I<path/to/wormhole/include/directory> \
   <path/to/wormhole/cmake/libwormhole.a> \
+  -L<path/to/curl_build/vendor_install/lib> \
   -lcurl
 ```
 
