@@ -6,14 +6,15 @@ A custom networking layer for Postman.
 
 ### C++ library
 
-Compile with the static library, `cmake/libwormhole.a`, and libcurl, `-lcurl`,
-using:
+Compile with the wormhole static library, `cmake/libwormhole.a`, and the custom
+build of the libcurl dynamic library in `curl_build/vendor_install/lib` using:
 
 ```sh
 clang++ \
   <entry/point.cc> \
+  <path/to/native_build/libwormhole.a> \
   -I<path/to/wormhole/include/directory> \
-  <path/to/wormhole/cmake/libwormhole.a> \
+  -L<path/to/curl_build/vendor_install/lib> \
   -lcurl
 ```
 
