@@ -63,6 +63,12 @@ Response request(const std::string_view url) {
     curl_easy_setopt(curl, CURLOPT_URL, url.data());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
+
+    // CURL_HTTP_VERSION_3: (Added in 7.66.0) This option makes libcurl attempt
+    // to use HTTP/3 to the host given in the URL, with fallback to earlier HTTP
+    // versions if needed.
+    curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, (long)CURL_HTTP_VERSION_3);
+
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
       fprintf(stderr, "curl_easy_perform() failed: %s\n",

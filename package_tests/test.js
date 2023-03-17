@@ -1,5 +1,6 @@
 const {
   deepStrictEqual,
+  ok,
   strictEqual,
 } = require('node:assert');
 
@@ -19,5 +20,14 @@ describe('Basic HTTP test', async (t) => {
 
   it('url', () => {
     strictEqual(responseJSON.url, 'https://postman-echo.com/get');
+  });
+});
+
+describe('Basic HTTP3 test', async (t) => {
+  // Found this url in https://bagder.github.io/HTTP3-test/.
+  const response = wormhole.request('https://quic.aiortc.org/');
+
+  it('content', () => {
+    ok(/Congratulations, you loaded this page using HTTP\/3/.test(response));
   });
 });
