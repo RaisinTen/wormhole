@@ -25,7 +25,11 @@ commands:
             - /Users/distiller/Library/Caches/Homebrew
       - run:
           name: Installing NPM dependencies
-          command: npm ci
+          # We are passing `--ignore-scripts` here, so that the installation
+          # doesn't trigger `node-gyp rebuild` to run because that depends on
+          # some of the binaries in `curl_build/vendor_install`, which is not
+          # available until `scripts/build.js` is run.
+          command: npm ci --ignore-scripts
 
   build:
     steps:
@@ -64,6 +68,14 @@ commands:
       - run:
           name: Package tests
           command: npm test
+      - run:
+          # TODO(RaisinTen): Find a different way of testing this outside the CI
+          # config. Could be done by sending an HTTP3 request once the wormhole
+          # library API allows that.
+          name: Test that the addon binary links to the custom build of libcurl
+          command: |
+            otool -L build/Release/wormhole.node | \
+              grep -q "$PWD/curl_build/vendor_install/lib/libcurl.4.dylib"
 
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs

@@ -1,4 +1,7 @@
 {
+  'variables': {
+    "curl_config_bin%": "<(module_root_dir)/curl_build/vendor_install/bin/curl-config",
+  },
   "targets": [{
     "target_name": "wormhole",
     "cflags!": [ "-fno-exceptions" ],
@@ -11,9 +14,10 @@
     'include_dirs': [
       "<!@(node -p \"require('node-addon-api').include\")",
       "include",
+      "<!(<(curl_config_bin) --prefix)/include"
     ],
     'libraries': [
-      "-lcurl",
+      "<!@(<(curl_config_bin) --libs)",
     ],
     'dependencies': [
       "<!(node -p \"require('node-addon-api').gyp\")"
