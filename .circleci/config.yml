@@ -25,7 +25,11 @@ commands:
             - /Users/distiller/Library/Caches/Homebrew
       - run:
           name: Installing NPM dependencies
-          command: npm ci
+          # We are passing `--ignore-scripts` here, so that the installation
+          # doesn't trigger `node-gyp rebuild` to run because that depends on
+          # some of the binaries in `curl_build/vendor_install`, which is not
+          # available until `scripts/build.js` is run.
+          command: npm ci --ignore-scripts
 
   build:
     steps:
