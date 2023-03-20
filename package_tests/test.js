@@ -6,7 +6,7 @@ const {
 
 const wormhole = require('..');
 
-describe('Basic HTTP test', async (t) => {
+describe('Basic HTTP test', async () => {
   const response = wormhole.request('https://postman-echo.com/get');
   const responseJSON = JSON.parse(response);
 
@@ -23,7 +23,7 @@ describe('Basic HTTP test', async (t) => {
   });
 });
 
-describe('Basic HTTP3 test', async (t) => {
+describe('Basic HTTP3 test', async () => {
   // Found this url in https://bagder.github.io/HTTP3-test/.
   const response = wormhole.request('https://quic.aiortc.org/');
 

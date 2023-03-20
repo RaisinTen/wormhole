@@ -130,3 +130,15 @@ npm run build
 ```sh
 npm test
 ```
+
+#### Format
+
+```sh
+npm run format
+```
+
+#### Lint
+
+```sh
+npm run lint
+```

@@ -10,6 +10,8 @@
     "build": "node-gyp rebuild",
     "clean": "node-gyp clean",
     "test": "mocha package_tests",
+    "lint": "eslint index.js package_tests/",
+    "format": "eslint --fix index.js package_tests/",
     "cmake:build": "cmake -S . -B native_build && cmake --build native_build",
     "cmake:format": "cmake --build native_build --target clang_format",
     "cmake:test": "./native_build/test/request_unit_test",
@@ -31,6 +33,7 @@
     "node-gyp": "^9.3.1"
   },
   "dependencies": {
+    "eslint": "^8.36.0",
     "node-addon-api": "^6.0.0"
   }
 }

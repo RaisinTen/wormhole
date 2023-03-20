@@ -48,6 +48,9 @@ commands:
       - run:
           name: Native format
           command: npm run cmake:format
+      - run:
+          name: Javascript lint
+          command: npm run lint
 
   test:
     steps:
