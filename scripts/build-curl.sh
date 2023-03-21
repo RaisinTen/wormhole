@@ -17,4 +17,5 @@ autoreconf -fi
   --enable-werror \
   --enable-debug \
   --with-test-nghttpx="$PREFIX/bin/nghttpx"
-make CFLAGS="-mmacosx-version-min=10.15 -Wno-deprecated-declarations" install
+make CFLAGS="-mmacosx-version-min=10.15 -Wno-deprecated-declarations" -j$(nproc)
+make install
