@@ -36,6 +36,8 @@ commands:
       - run:
           name: Build curl
           command: ./scripts/build.sh
+      - store_artifacts:
+          path: curl_build/vendor_install/relocatable_lib
       - run:
           name: Native build
           command: npm run cmake:build
