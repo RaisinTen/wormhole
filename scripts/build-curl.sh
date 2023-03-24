@@ -11,7 +11,6 @@ autoreconf -fi
   --prefix=$PREFIX \
   --with-openssl=$PREFIX \
   PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
-  LDFLAGS="-Wl,-rpath,$PREFIX/lib" \
   --with-ngtcp2="$PREFIX" \
   --enable-warnings \
   --enable-werror \
