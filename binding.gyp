@@ -17,7 +17,7 @@
       "<!(<(curl_config_bin) --prefix)/include"
     ],
     'libraries': [
-      "<!@(<(curl_config_bin) --libs)",
+      "-L<!(<(curl_config_bin) --prefix)/relocatable_lib -lcurl",
     ],
     'dependencies': [
       "<!(node -p \"require('node-addon-api').gyp\")"
