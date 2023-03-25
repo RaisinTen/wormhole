@@ -38,7 +38,7 @@ commands:
           command: ./scripts/build.sh
       - run:
           name: Create relocatable zip
-          command: zip --symlinks -r relocatable.zip relocatable
+          command: zip -r relocatable.zip relocatable
       - store_artifacts:
           path: relocatable.zip
       - run:
