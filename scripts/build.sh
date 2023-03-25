@@ -12,8 +12,7 @@ CDPATH='' cd -- "$(dirname -- "$0")"
 SCRIPT_DIRECTORY="$(pwd -P)"
 cd "$CWD"
 
-PROJECT_ROOT="$(dirname $SCRIPT_DIRECTORY)"
-
+export PROJECT_ROOT="$(dirname $SCRIPT_DIRECTORY)"
 export VENDOR="$PROJECT_ROOT/vendor"
 export BUILD="$PROJECT_ROOT/curl_build/vendor"
 export PREFIX="$PROJECT_ROOT/curl_build/vendor_install"
@@ -25,3 +24,5 @@ mkdir -p "$PREFIX"
 "$SCRIPT_DIRECTORY/build-nghttp3.sh"
 "$SCRIPT_DIRECTORY/build-ngtcp2.sh"
 "$SCRIPT_DIRECTORY/build-curl.sh"
+
+"$SCRIPT_DIRECTORY/make-relocatable.sh"
