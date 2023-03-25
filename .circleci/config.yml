@@ -118,9 +118,9 @@ jobs:
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
+      - checkout
       - attach_workspace:
           at: .
-      - checkout
       - run:
           # TODO(RaisinTen): It should be possible to create a separate Brewfile
           # for this step.
@@ -140,9 +140,9 @@ jobs:
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
+      - checkout
       - attach_workspace:
           at: .
-      - checkout
       - run:
           # TODO(RaisinTen): It should be possible to create a separate Brewfile
           # for this step.
