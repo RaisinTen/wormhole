@@ -14,7 +14,7 @@ clang++ \
   <entry/point.cc> \
   <path/to/native_build/libwormhole.a> \
   -I<path/to/wormhole/include/directory> \
-  -L<path/to/curl_build/vendor_install/relocatable_lib> \
+  -L<path/to/relocatable/lib> \
   -lcurl \
   -rpath @executable_path/<relative/path/to//relocatable>
 ```
