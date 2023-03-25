@@ -10,7 +10,10 @@ set -o nounset
 # This is done by manually checking the output of `otool -l` on each of these
 # libraries and replacing the absolute paths of the libraries into relative
 # paths with the `@loader_path` symbol, which is the path of the directory that
-# contains the library, by using the `install_name_tool` tool.
+# contains the library, by using the `install_name_tool` tool. The install name
+# of the entrypoint library is also changed into a path relative to the `@rpath`
+# path. The assumed `@rpath` here is the directory containing the
+# `relocatable_lib` directory.
 
 cd "$PREFIX"
 
@@ -33,6 +36,24 @@ cp "../lib/libngtcp2_crypto_openssl.4.dylib" .
 cp -P "../lib/libngtcp2_crypto_openssl.dylib" .
 cp "../lib/libssl.81.3.dylib" .
 cp -P "../lib/libssl.dylib" .
+
+# Set the install name of the entrypoint dylib - libcurl.
+# So here, the requirement is that whatever dylib / executable that attempts to
+# load this should have an rpath pointing to the directory containing the
+# `relocatable_lib` directory.
+install_name_tool -id "@rpath/relocatable_lib/libcurl.4.dylib" "libcurl.4.dylib"
+
+# Set the install names of the dylibs. This step is totally optional because
+# these libraries are currently only loaded by libraries in the relocatable_lib
+# directory and not from any client application which would load these
+# indirectly through an rpath. This is being because of stylistic reasons so
+# that `otool -l` on these libraries don't contain the original paths of these
+# libraries which is only sensible on the host system where these were built.
+install_name_tool -id "@rpath/relocatable_lib/libcrypto.81.3.dylib" "libcrypto.81.3.dylib"
+install_name_tool -id "@rpath/relocatable_lib/libnghttp3.3.dylib" "libnghttp3.3.dylib"
+install_name_tool -id "@rpath/relocatable_lib/libngtcp2.10.dylib" "libngtcp2.10.dylib"
+install_name_tool -id "@rpath/relocatable_lib/libngtcp2_crypto_openssl.4.dylib" "libngtcp2_crypto_openssl.4.dylib"
+install_name_tool -id "@rpath/relocatable_lib/libssl.81.3.dylib" "libssl.81.3.dylib"
 
 # Change the dependent shared library install names in libcurl
 install_name_tool -change "$PREFIX/lib/libnghttp3.3.dylib" "@loader_path/libnghttp3.3.dylib" "libcurl.4.dylib"

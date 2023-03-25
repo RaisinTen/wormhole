@@ -16,7 +16,8 @@ clang++ \
   <path/to/native_build/libwormhole.a> \
   -I<path/to/wormhole/include/directory> \
   -L<path/to/curl_build/vendor_install/relocatable_lib> \
-  -lcurl
+  -lcurl \
+  -rpath @executable_path/relative/path/to/directory/containing/relocatable_lib
 ```
 
 ```cc

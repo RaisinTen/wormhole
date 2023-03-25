@@ -18,6 +18,7 @@
     ],
     'libraries': [
       "-L<!(<(curl_config_bin) --prefix)/relocatable_lib -lcurl",
+      "-rpath @loader_path/../../curl_build/vendor_install",
     ],
     'dependencies': [
       "<!(node -p \"require('node-addon-api').gyp\")"
