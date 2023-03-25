@@ -83,16 +83,29 @@ install_name_tool -id "@rpath/lib/libbrotlicommon.dylib" "libbrotlicommon.dylib"
 # Change the dependent shared library install names in built libraries
 
 # Change the dependent shared library install names in libcurl
+
+# Change the dependent built shared library install names in libcurl
 install_name_tool -change "$PREFIX/lib/libnghttp3.3.dylib" "@loader_path/libnghttp3.dylib" "libcurl.dylib"
 install_name_tool -change "$PREFIX/lib/libngtcp2_crypto_openssl.4.dylib" "@loader_path/libngtcp2_crypto_openssl.dylib" "libcurl.dylib"
 install_name_tool -change "$PREFIX/lib/libngtcp2.10.dylib" "@loader_path/libngtcp2.dylib" "libcurl.dylib"
 install_name_tool -change "$PREFIX/lib/libssl.81.3.dylib" "@loader_path/libssl.dylib" "libcurl.dylib"
 install_name_tool -change "$PREFIX/lib/libcrypto.81.3.dylib" "@loader_path/libcrypto.dylib" "libcurl.dylib"
 
-install_name_tool -change "/usr/local/opt/libnghttp2/lib/libnghttp2.14.dylib" "@loader_path/libnghttp2.dylib" "libcurl.dylib"
-install_name_tool -change "/usr/local/opt/libidn2/lib/libidn2.0.dylib" "@loader_path/libidn2.dylib" "libcurl.dylib"
-install_name_tool -change "/usr/local/opt/zstd/lib/libzstd.1.dylib" "@loader_path/libzstd.dylib" "libcurl.dylib"
-install_name_tool -change "/usr/local/opt/brotli/lib/libbrotlidec.1.dylib" "@loader_path/libbrotlidec.dylib" "libcurl.dylib"
+# Change the dependent installed shared library install names in libcurl
+
+# TODO(RaisinTen): Add assertions to make sure that the old path in
+# `install_name_tool -change old new file` command exists. Currently, if it
+# doesn't exist the command doesn't indicate that in anyway.
+
+# The `stat -f "%Y" <symlink/path>` command follows a symlink just once. This
+# has been done so that we can use the library paths without hardcoding the
+# version suffixes. No need to do this for built libraries for now because we
+# are in full control of those version numbers.
+# Refs: https://unix.stackexchange.com/a/138658
+install_name_tool -change "/usr/local/opt/libnghttp2/lib/$(stat -f "%Y" "/usr/local/opt/libnghttp2/lib/libnghttp2.dylib")" "@loader_path/libnghttp2.dylib" "libcurl.dylib"
+install_name_tool -change "/usr/local/opt/libidn2/lib/$(stat -f "%Y" "/usr/local/opt/libidn2/lib/libidn2.dylib")" "@loader_path/libidn2.dylib" "libcurl.dylib"
+install_name_tool -change "/usr/local/opt/zstd/lib/$(stat -f "%Y" "/usr/local/opt/zstd/lib/libzstd.dylib")" "@loader_path/libzstd.dylib" "libcurl.dylib"
+install_name_tool -change "/usr/local/opt/brotli/lib/$(stat -f "%Y" "/usr/local/opt/brotli/lib/libbrotlidec.dylib")" "@loader_path/libbrotlidec.dylib" "libcurl.dylib"
 
 # Change the dependent shared library install names in libngtcp2_crypto_openssl
 install_name_tool -change "$PREFIX/lib/libngtcp2.10.dylib" "@loader_path/libngtcp2.dylib" "libngtcp2_crypto_openssl.dylib"
@@ -105,11 +118,11 @@ install_name_tool -change "$PREFIX/lib/libcrypto.81.3.dylib" "@loader_path/libcr
 # Change the dependent shared library install names in installed libraries
 
 # Change the dependent shared library install names in libidn2
-install_name_tool -change "/usr/local/opt/libunistring/lib/libunistring.2.dylib" "@loader_path/libunistring.dylib" "libidn2.dylib"
-install_name_tool -change "/usr/local/opt/gettext/lib/libintl.8.dylib" "@loader_path/libintl.dylib" "libidn2.dylib"
+install_name_tool -change "/usr/local/opt/libunistring/lib/$(stat -f "%Y" "/usr/local/opt/libunistring/lib/libunistring.dylib")" "@loader_path/libunistring.dylib" "libidn2.dylib"
+install_name_tool -change "/usr/local/opt/gettext/lib/$(stat -f "%Y" "/usr/local/opt/gettext/lib/libintl.dylib")" "@loader_path/libintl.dylib" "libidn2.dylib"
 
 # Change the dependent shared library install names in libbrotlidec
 # Note that unlike the other cases, the install name of libbrotlicommon in
 # libbrotlidec is not an absolute path but rather a relative path using
 # `@loader_path`.
-install_name_tool -change "@loader_path/libbrotlicommon.1.dylib" "@loader_path/libbrotlicommon.dylib" "libbrotlidec.dylib"
+install_name_tool -change "@loader_path/$(stat -f "%Y" /usr/local/opt/brotli/lib/libbrotlicommon.dylib)" "@loader_path/libbrotlicommon.dylib" "libbrotlidec.dylib"
