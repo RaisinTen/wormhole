@@ -28,6 +28,8 @@ cd lib
 
 # Copy libraries by resolving the symlinks, so that `-lcurl` could be passed
 # to the linker instead of `-lcurl.4`.
+
+# Copy built libraries.
 cp "$PREFIX/lib/libcrypto.dylib" .
 cp "$PREFIX/lib/libcurl.dylib" .
 cp "$PREFIX/lib/libnghttp3.dylib" .
@@ -35,23 +37,50 @@ cp "$PREFIX/lib/libngtcp2.dylib" .
 cp "$PREFIX/lib/libngtcp2_crypto_openssl.dylib" .
 cp "$PREFIX/lib/libssl.dylib" .
 
-# Set the install name of the entrypoint dylib - libcurl.
+# Copy other installed dependency libraries.
+# These are all libcurl dependencies.
+cp "/usr/local/opt/libnghttp2/lib/libnghttp2.dylib" .
+cp "/usr/local/opt/libidn2/lib/libidn2.dylib" .
+cp "/usr/local/opt/zstd/lib/libzstd.dylib" .
+cp "/usr/local/opt/brotli/lib/libbrotlidec.dylib" .
+
+# These are all libidn2 dependencies.
+cp "/usr/local/opt/libunistring/lib/libunistring.dylib" .
+cp "/usr/local/opt/gettext/lib/libintl.dylib" .
+
+# These are all libbrotlidec dependencies.
+cp "/usr/local/opt/brotli/lib/libbrotlicommon.dylib" .
+
+# Set the identification name of the entrypoint dylib - libcurl.
 # So here, the requirement is that whatever dylib / executable that attempts to
 # load this should have an rpath pointing to the `relocatable` directory.
 install_name_tool -id "@rpath/lib/libcurl.dylib" "libcurl.dylib"
 
-# Set the install names of the dylibs. This step is totally optional because
-# these libraries are currently only loaded by libraries in the
+# Set the identification names of the dylibs. This step is totally optional
+# because these libraries are currently only loaded by libraries in the
 # `relocatable/lib` directory and not from any client application which would
 # load these indirectly through an rpath. This is being because of stylistic
 # reasons so that `otool -l` on these libraries don't contain the original paths
 # of these libraries which is only sensible on the host system where these were
 # built.
+
+# Change identification names of built libraries.
 install_name_tool -id "@rpath/lib/libcrypto.dylib" "libcrypto.dylib"
 install_name_tool -id "@rpath/lib/libnghttp3.dylib" "libnghttp3.dylib"
 install_name_tool -id "@rpath/lib/libngtcp2.dylib" "libngtcp2.dylib"
 install_name_tool -id "@rpath/lib/libngtcp2_crypto_openssl.dylib" "libngtcp2_crypto_openssl.dylib"
 install_name_tool -id "@rpath/lib/libssl.dylib" "libssl.dylib"
+
+# Change identification names of installed libraries.
+install_name_tool -id "@rpath/lib/libnghttp2.dylib" "libnghttp2.dylib"
+install_name_tool -id "@rpath/lib/libidn2.dylib" "libidn2.dylib"
+install_name_tool -id "@rpath/lib/libunistring.dylib" "libunistring.dylib"
+install_name_tool -id "@rpath/lib/libintl.dylib" "libintl.dylib"
+install_name_tool -id "@rpath/lib/libzstd.dylib" "libzstd.dylib"
+install_name_tool -id "@rpath/lib/libbrotlidec.dylib" "libbrotlidec.dylib"
+install_name_tool -id "@rpath/lib/libbrotlicommon.dylib" "libbrotlicommon.dylib"
+
+# Change the dependent shared library install names in built libraries
 
 # Change the dependent shared library install names in libcurl
 install_name_tool -change "$PREFIX/lib/libnghttp3.3.dylib" "@loader_path/libnghttp3.dylib" "libcurl.dylib"
@@ -59,6 +88,11 @@ install_name_tool -change "$PREFIX/lib/libngtcp2_crypto_openssl.4.dylib" "@loade
 install_name_tool -change "$PREFIX/lib/libngtcp2.10.dylib" "@loader_path/libngtcp2.dylib" "libcurl.dylib"
 install_name_tool -change "$PREFIX/lib/libssl.81.3.dylib" "@loader_path/libssl.dylib" "libcurl.dylib"
 install_name_tool -change "$PREFIX/lib/libcrypto.81.3.dylib" "@loader_path/libcrypto.dylib" "libcurl.dylib"
+
+install_name_tool -change "/usr/local/opt/libnghttp2/lib/libnghttp2.14.dylib" "@loader_path/libnghttp2.dylib" "libcurl.dylib"
+install_name_tool -change "/usr/local/opt/libidn2/lib/libidn2.0.dylib" "@loader_path/libidn2.dylib" "libcurl.dylib"
+install_name_tool -change "/usr/local/opt/zstd/lib/libzstd.1.dylib" "@loader_path/libzstd.dylib" "libcurl.dylib"
+install_name_tool -change "/usr/local/opt/brotli/lib/libbrotlidec.1.dylib" "@loader_path/libbrotlidec.dylib" "libcurl.dylib"
 
 # Change the dependent shared library install names in libngtcp2_crypto_openssl
 install_name_tool -change "$PREFIX/lib/libngtcp2.10.dylib" "@loader_path/libngtcp2.dylib" "libngtcp2_crypto_openssl.dylib"
@@ -68,5 +102,11 @@ install_name_tool -change "$PREFIX/lib/libcrypto.81.3.dylib" "@loader_path/libcr
 # Change the dependent shared library install names in libssl
 install_name_tool -change "$PREFIX/lib/libcrypto.81.3.dylib" "@loader_path/libcrypto.dylib" "libssl.dylib"
 
-# TODO(RaisinTen): Also include the system dependencies in the `relocatable/lib`
-# directory as relocatable libraries.
+# Change the dependent shared library install names in installed libraries
+
+# Change the dependent shared library install names in libidn2
+install_name_tool -change "/usr/local/opt/libunistring/lib/libunistring.2.dylib" "@loader_path/libunistring.dylib" "libidn2.dylib"
+install_name_tool -change "/usr/local/opt/gettext/lib/libintl.8.dylib" "@loader_path/libintl.dylib" "libidn2.dylib"
+
+# Change the dependent shared library install names in libbrotlidec
+install_name_tool -change "/usr/local/opt/brotli/lib/libbrotlicommon.1.dylib" "@loader_path/libbrotlicommon.dylib" "libbrotlidec.dylib"
