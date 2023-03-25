@@ -109,4 +109,7 @@ install_name_tool -change "/usr/local/opt/libunistring/lib/libunistring.2.dylib"
 install_name_tool -change "/usr/local/opt/gettext/lib/libintl.8.dylib" "@loader_path/libintl.dylib" "libidn2.dylib"
 
 # Change the dependent shared library install names in libbrotlidec
-install_name_tool -change "/usr/local/opt/brotli/lib/libbrotlicommon.1.dylib" "@loader_path/libbrotlicommon.dylib" "libbrotlidec.dylib"
+# Note that unlike the other cases, the install name of libbrotlicommon in
+# libbrotlidec is not an absolute path but rather a relative path using
+# `@loader_path`.
+install_name_tool -change "@loader_path/libbrotlicommon.1.dylib" "@loader_path/libbrotlicommon.dylib" "libbrotlidec.dylib"
