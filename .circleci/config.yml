@@ -37,10 +37,10 @@ commands:
           name: Build curl
           command: ./scripts/build.sh
       - run:
-          name: Create relocatable library zip
-          command: zip --symlinks -r relocatable_lib.zip curl_build/vendor_install/relocatable_lib
+          name: Create relocatable zip
+          command: zip --symlinks -r relocatable.zip relocatable
       - store_artifacts:
-          path: relocatable_lib.zip
+          path: relocatable.zip
       - run:
           name: Native build
           command: npm run cmake:build

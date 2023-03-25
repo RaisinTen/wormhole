@@ -1,7 +1,4 @@
 {
-  'variables': {
-    "curl_config_bin%": "<(module_root_dir)/curl_build/vendor_install/bin/curl-config",
-  },
   "targets": [{
     "target_name": "wormhole",
     "cflags!": [ "-fno-exceptions" ],
@@ -14,11 +11,11 @@
     'include_dirs': [
       "<!@(node -p \"require('node-addon-api').include\")",
       "include",
-      "<!(<(curl_config_bin) --prefix)/include"
+      "<(module_root_dir)/relocatable/include"
     ],
     'libraries': [
-      "-L<!(<(curl_config_bin) --prefix)/relocatable_lib -lcurl",
-      "-rpath @loader_path/../../curl_build/vendor_install",
+      "-L<(module_root_dir)/relocatable/lib -lcurl",
+      "-rpath @loader_path/../../relocatable",
     ],
     'dependencies': [
       "<!(node -p \"require('node-addon-api').gyp\")"

@@ -10,16 +10,11 @@ add_library(wormhole STATIC
 set_target_properties(wormhole PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(wormhole PROPERTIES SOVERSION 1)
 
-execute_process(
-  COMMAND curl_build/vendor_install/bin/curl-config --prefix
-  OUTPUT_VARIABLE CURL_CONFIG_PREFIX_PATH
-  OUTPUT_STRIP_TRAILING_WHITESPACE)
-
 set_target_properties(wormhole PROPERTIES PUBLIC_HEADER include/request.h)
 
 target_include_directories(wormhole PRIVATE include)
 target_include_directories(wormhole PRIVATE src)
-target_include_directories(wormhole PRIVATE ${CURL_CONFIG_PREFIX_PATH}/include)
+target_include_directories(wormhole PRIVATE relocatable/include)
 
 include(GNUInstallDirs)
 
