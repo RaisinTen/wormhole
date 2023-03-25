@@ -31,10 +31,10 @@ commands:
           # available until `scripts/build.js` is run.
           command: npm ci --ignore-scripts
 
-  build:
+  build-relocatable-libcurl:
     steps:
       - run:
-          name: Build curl
+          name: Build relocatable libcurl
           command: ./scripts/build.sh
       - run:
           name: Create relocatable zip
@@ -42,10 +42,19 @@ commands:
       - store_artifacts:
           path: relocatable.zip
       - run:
-          name: Native build
-          command: npm run cmake:build
+          name: Delete relocatable zip
+          command: rm relocatable.zip
+
+  build-cmake-library:
+    steps:
       - run:
-          name: Package build
+          name: Build CMake library
+          command: cmake -S . -B native_build && cmake --build native_build
+
+  build-npm-library:
+    steps:
+      - run:
+          name: Build NPM project
           command: npm run build
 
   format:
@@ -57,22 +66,28 @@ commands:
           name: Javascript lint
           command: npm run lint
 
-  test:
+  test-curl-build:
     steps:
       - run:
           name: Curl test
           command: ./curl_build/vendor_install/bin/curl --http3 https://postman-echo.com/get
+
+  test-cmake-library:
+    steps:
       - run:
-          name: Native tests
-          command: npm run cmake:test
+          name: Test CMake library
+          command: ./native_build/test/request_unit_test
+
+  test-npm-library:
+    steps:
       - run:
-          name: Package tests
+          name: Test NPM library
           command: npm test
 
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-  macos:
+  build-and-test-relocatable-libcurl:
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     executor: macos-x64
@@ -82,13 +97,63 @@ jobs:
     steps:
       - checkout
       - dependencies
-      - build
+      # TODO(RaisinTen): Move format to its own job. In fact, it should be
+      # a lint job because formatting makes no sense on CI.
       - format
-      - test
+      - build-relocatable-libcurl
+      - test-curl-build
+      - persist_to_workspace:
+          root: .
+          paths:
+            - relocatable
+
+  build-and-test-cmake-library:
+    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
+    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+    executor: macos-x64
+
+    # Add steps to the job
+    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+    steps:
+      - attach_workspace:
+          at: .
+      - checkout
+      - run:
+          # TODO(RaisinTen): It should be possible to create a separate Brewfile
+          # for this step.
+          name: Install dependencies
+          command: brew install cmake
+      - build-cmake-library
+      - test-cmake-library
+
+  build-and-test-npm-library:
+    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
+    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+    executor: macos-x64
+
+    # Add steps to the job
+    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+    steps:
+      - attach_workspace:
+          at: .
+      - checkout
+      - run:
+          # TODO(RaisinTen): It should be possible to create a separate Brewfile
+          # for this step.
+          name: Install dependencies
+          command: brew install node
+      - build-npm-library
+      - test-npm-library
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
   wormhole:
     jobs:
-      - macos
+      - build-and-test-relocatable-libcurl
+      - build-and-test-cmake-library:
+          requires:
+            - build-and-test-relocatable-libcurl
+      - build-and-test-npm-library:
+          requires:
+            - build-and-test-relocatable-libcurl
