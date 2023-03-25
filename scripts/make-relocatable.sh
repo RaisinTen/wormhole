@@ -54,19 +54,19 @@ install_name_tool -id "@rpath/lib/libngtcp2_crypto_openssl.dylib" "libngtcp2_cry
 install_name_tool -id "@rpath/lib/libssl.dylib" "libssl.dylib"
 
 # Change the dependent shared library install names in libcurl
-install_name_tool -change "$PREFIX/lib/libnghttp3.dylib" "@loader_path/libnghttp3.dylib" "libcurl.dylib"
-install_name_tool -change "$PREFIX/lib/libngtcp2_crypto_openssl.dylib" "@loader_path/libngtcp2_crypto_openssl.dylib" "libcurl.dylib"
-install_name_tool -change "$PREFIX/lib/libngtcp2.dylib" "@loader_path/libngtcp2.dylib" "libcurl.dylib"
-install_name_tool -change "$PREFIX/lib/libssl.dylib" "@loader_path/libssl.dylib" "libcurl.dylib"
-install_name_tool -change "$PREFIX/lib/libcrypto.dylib" "@loader_path/libcrypto.dylib" "libcurl.dylib"
+install_name_tool -change "$PREFIX/lib/libnghttp3.3.dylib" "@loader_path/libnghttp3.dylib" "libcurl.dylib"
+install_name_tool -change "$PREFIX/lib/libngtcp2_crypto_openssl.4.dylib" "@loader_path/libngtcp2_crypto_openssl.dylib" "libcurl.dylib"
+install_name_tool -change "$PREFIX/lib/libngtcp2.10.dylib" "@loader_path/libngtcp2.dylib" "libcurl.dylib"
+install_name_tool -change "$PREFIX/lib/libssl.81.3.dylib" "@loader_path/libssl.dylib" "libcurl.dylib"
+install_name_tool -change "$PREFIX/lib/libcrypto.81.3.dylib" "@loader_path/libcrypto.dylib" "libcurl.dylib"
 
 # Change the dependent shared library install names in libngtcp2_crypto_openssl
-install_name_tool -change "$PREFIX/lib/libngtcp2.dylib" "@loader_path/libngtcp2.dylib" "libngtcp2_crypto_openssl.dylib"
-install_name_tool -change "$PREFIX/lib/libssl.dylib" "@loader_path/libssl.dylib" "libngtcp2_crypto_openssl.dylib"
-install_name_tool -change "$PREFIX/lib/libcrypto.dylib" "@loader_path/libcrypto.dylib" "libngtcp2_crypto_openssl.dylib"
+install_name_tool -change "$PREFIX/lib/libngtcp2.10.dylib" "@loader_path/libngtcp2.dylib" "libngtcp2_crypto_openssl.dylib"
+install_name_tool -change "$PREFIX/lib/libssl.81.3.dylib" "@loader_path/libssl.dylib" "libngtcp2_crypto_openssl.dylib"
+install_name_tool -change "$PREFIX/lib/libcrypto.81.3.dylib" "@loader_path/libcrypto.dylib" "libngtcp2_crypto_openssl.dylib"
 
 # Change the dependent shared library install names in libssl
-install_name_tool -change "$PREFIX/lib/libcrypto.dylib" "@loader_path/libcrypto.dylib" "libssl.dylib"
+install_name_tool -change "$PREFIX/lib/libcrypto.81.3.dylib" "@loader_path/libcrypto.dylib" "libssl.dylib"
 
 # TODO(RaisinTen): Also include the system dependencies in the `relocatable/lib`
 # directory as relocatable libraries.
