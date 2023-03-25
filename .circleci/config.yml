@@ -23,6 +23,9 @@ commands:
             - /opt/homebrew/Library/Taps/homebrew/homebrew-bundle
             - /usr/local/Homebrew/Library/Taps/homebrew/homebrew-bundle
             - /Users/distiller/Library/Caches/Homebrew
+
+  install-npm-library-dependencies:
+    steps:
       - run:
           name: Installing NPM dependencies
           # We are passing `--ignore-scripts` here, so that the installation
@@ -57,13 +60,16 @@ commands:
           name: Build NPM project
           command: npm run build
 
-  format:
+  lint-cpp-library:
     steps:
       - run:
-          name: Native format
-          command: npm run cmake:format
+          name: Run C++ linter
+          command: cmake --build native_build --target clang_format_test
+
+  lint-js-library:
+    steps:
       - run:
-          name: Javascript lint
+          name: Run JS linter
           command: npm run lint
 
   test-curl-build:
@@ -97,9 +103,6 @@ jobs:
     steps:
       - checkout
       - dependencies
-      # TODO(RaisinTen): Move format to its own job. In fact, it should be
-      # a lint job because formatting makes no sense on CI.
-      - format
       - build-relocatable-libcurl
       - test-curl-build
       - persist_to_workspace:
@@ -122,8 +125,11 @@ jobs:
           # TODO(RaisinTen): It should be possible to create a separate Brewfile
           # for this step.
           name: Install dependencies
-          command: brew install cmake
+          command: brew install cmake clang-format
       - build-cmake-library
+      # The C++ linter cannot be run before the build-cmake-library because the
+      # command depends on the presence of the `native_build` directory.
+      - lint-cpp-library
       - test-cmake-library
 
   build-and-test-npm-library:
@@ -142,6 +148,8 @@ jobs:
           # for this step.
           name: Install dependencies
           command: brew install node
+      - install-npm-library-dependencies
+      - lint-js-library
       - build-npm-library
       - test-npm-library
 
