@@ -13,4 +13,4 @@ build
 node_modules
 cmake_build
 curl_build
-relocatable
+relocatable_libcurl

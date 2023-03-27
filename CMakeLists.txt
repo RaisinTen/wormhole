@@ -17,14 +17,14 @@ set_target_properties(wormhole PROPERTIES PUBLIC_HEADER include/request.h)
 
 target_include_directories(wormhole PRIVATE include)
 target_include_directories(wormhole PRIVATE src)
-target_include_directories(wormhole PRIVATE relocatable/include)
+target_include_directories(wormhole PRIVATE relocatable_libcurl/include)
 
 # This is not using:
-# target_link_directories(wormhole PRIVATE ../relocatable/lib)
+# target_link_directories(wormhole PRIVATE ../relocatable_libcurl/lib)
 # because that unnecessarily adds an rpath to the link directory.
-target_link_libraries(wormhole PRIVATE "-L../relocatable/lib")
+target_link_libraries(wormhole PRIVATE "-L../relocatable_libcurl/lib")
 target_link_libraries(wormhole PRIVATE curl)
-target_link_libraries(wormhole PRIVATE "-rpath @loader_path/../relocatable")
+target_link_libraries(wormhole PRIVATE "-rpath @loader_path/../relocatable_libcurl")
 
 include(GNUInstallDirs)
 

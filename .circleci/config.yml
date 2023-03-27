@@ -38,15 +38,15 @@ commands:
     steps:
       - run:
           name: Build relocatable libcurl
-          command: ./scripts/build.sh
+          command: scripts/build.sh
       - run:
-          name: Create relocatable zip
-          command: zip -r relocatable.zip relocatable
+          name: Create relocatable_libcurl.zip
+          command: zip -r relocatable_libcurl.zip relocatable_libcurl
       - store_artifacts:
-          path: relocatable.zip
+          path: relocatable_libcurl.zip
       - run:
-          name: Delete relocatable zip
-          command: rm relocatable.zip
+          name: Delete relocatable_libcurl.zip
+          command: rm relocatable_libcurl.zip
 
   build-cmake-library:
     steps:
@@ -108,7 +108,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - relocatable
+            - relocatable_libcurl
 
   build-and-test-cmake-library:
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.

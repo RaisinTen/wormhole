@@ -11,7 +11,7 @@
     'include_dirs': [
       "<!@(node -p \"require('node-addon-api').include\")",
       "include",
-      "<(module_root_dir)/relocatable/include"
+      "<(module_root_dir)/relocatable_libcurl/include"
     ],
     'libraries': [
       "-L<(module_root_dir)/cmake_build -lwormhole",

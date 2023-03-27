@@ -25,4 +25,4 @@ mkdir -p "$PREFIX"
 "$SCRIPT_DIRECTORY/build-ngtcp2.sh"
 "$SCRIPT_DIRECTORY/build-curl.sh"
 
-"$SCRIPT_DIRECTORY/make-relocatable.sh"
+"$SCRIPT_DIRECTORY/make-relocatable-libcurl.sh"
