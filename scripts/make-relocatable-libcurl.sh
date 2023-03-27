@@ -21,7 +21,8 @@ mkdir relocatable_libcurl
 cd relocatable_libcurl
 
 # Copy the includes directory.
-cp -R "$PREFIX/include" .
+mkdir include
+cp -R "$PREFIX/include/curl" include
 
 mkdir lib
 cd lib
