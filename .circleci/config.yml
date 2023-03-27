@@ -131,6 +131,12 @@ jobs:
       # command depends on the presence of the `native_build` directory.
       - lint-cpp-library
       - test-cmake-library
+      - persist_to_workspace:
+          root: .
+          paths:
+            - native_build/libwormhole.1.0.0.dylib
+            - native_build/libwormhole.1.dylib
+            - native_build/libwormhole.dylib
 
   build-and-test-npm-library:
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
@@ -164,4 +170,4 @@ workflows:
             - build-and-test-relocatable-libcurl
       - build-and-test-npm-library:
           requires:
-            - build-and-test-relocatable-libcurl
+            - build-and-test-cmake-library

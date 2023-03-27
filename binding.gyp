@@ -14,8 +14,8 @@
       "<(module_root_dir)/relocatable/include"
     ],
     'libraries': [
-      "-L<(module_root_dir)/relocatable/lib -lcurl",
-      "-rpath @loader_path/../../relocatable",
+      "-L<(module_root_dir)/native_build -lwormhole",
+      "-rpath @loader_path/../../native_build",
     ],
     'dependencies': [
       "<!(node -p \"require('node-addon-api').gyp\")"
