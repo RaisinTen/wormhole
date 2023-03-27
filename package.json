@@ -12,11 +12,11 @@
     "test": "mocha package_tests",
     "lint": "eslint index.js package_tests/",
     "format": "eslint --fix index.js package_tests/",
-    "cmake:build": "cmake -S . -B native_build && cmake --build native_build",
-    "cmake:format": "cmake --build native_build --target clang_format",
-    "cmake:test": "./native_build/test/request_unit_test",
+    "cmake:build": "cmake -S . -B cmake_build && cmake --build cmake_build",
+    "cmake:format": "cmake --build cmake_build --target clang_format",
+    "cmake:test": "cmake_build/test/request_unit_test",
     "cmake:all": "npm run cmake:build && npm run cmake:format && npm run cmake:test",
-    "cmake:clean": "rm -rf native_build"
+    "cmake:clean": "rm -rf cmake_build"
   },
   "repository": {
     "type": "git",

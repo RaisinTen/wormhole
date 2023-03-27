@@ -7,15 +7,15 @@ A custom networking layer for Postman.
 ### C++ library
 
 Compile with the wormhole shared library present in
-`native_build/libwormhole.dylib`:
+`cmake_build/libwormhole.dylib`:
 
 ```sh
 clang++ \
   <entry/point.cc> \
   -I<path/to/wormhole/include/directory> \
-  -L<path/to/native_build> \
+  -L<path/to/cmake_build> \
   -lwormhole \
-  -rpath @executable_path/<relative/path/to/native_build>
+  -rpath @executable_path/<relative/path/to/cmake_build>
 ```
 
 ```cc

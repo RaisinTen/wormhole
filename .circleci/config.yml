@@ -52,7 +52,7 @@ commands:
     steps:
       - run:
           name: Build CMake library
-          command: cmake -S . -B native_build && cmake --build native_build
+          command: cmake -S . -B cmake_build && cmake --build cmake_build
 
   build-npm-library:
     steps:
@@ -64,7 +64,7 @@ commands:
     steps:
       - run:
           name: Run C++ linter
-          command: cmake --build native_build --target clang_format_test
+          command: cmake --build cmake_build --target clang_format_test
 
   lint-js-library:
     steps:
@@ -82,7 +82,7 @@ commands:
     steps:
       - run:
           name: Test CMake library
-          command: ./native_build/test/request_unit_test
+          command: ./cmake_build/test/request_unit_test
 
   test-npm-library:
     steps:
@@ -128,15 +128,15 @@ jobs:
           command: brew install cmake clang-format
       - build-cmake-library
       # The C++ linter cannot be run before the build-cmake-library because the
-      # command depends on the presence of the `native_build` directory.
+      # command depends on the presence of the `cmake_build` directory.
       - lint-cpp-library
       - test-cmake-library
       - persist_to_workspace:
           root: .
           paths:
-            - native_build/libwormhole.1.0.0.dylib
-            - native_build/libwormhole.1.dylib
-            - native_build/libwormhole.dylib
+            - cmake_build/libwormhole.1.0.0.dylib
+            - cmake_build/libwormhole.1.dylib
+            - cmake_build/libwormhole.dylib
 
   build-and-test-npm-library:
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
