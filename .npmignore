@@ -7,7 +7,7 @@ Testing/
 build/
 cmake/
 curl_build/
-native_build/
+cmake_build/
 node_modules/
 package_tests/
 scripts/

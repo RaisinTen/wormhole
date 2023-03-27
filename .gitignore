@@ -11,6 +11,6 @@ CTestTestfile.cmake
 _deps
 build
 node_modules
-native_build
+cmake_build
 curl_build
-relocatable
+relocatable_libcurl
