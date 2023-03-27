@@ -1,3 +1,4 @@
+.eslintrc.json
 .circleci/
 Brewfile
 CMakeLists.txt
@@ -5,9 +6,10 @@ DEPENDENCIES
 Testing/
 build/
 cmake/
-googletest.cmake
+curl_build/
 native_build/
 node_modules/
 package_tests/
+scripts/
 test/
 vendor/
