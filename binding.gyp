@@ -11,11 +11,11 @@
     'include_dirs': [
       "<!@(node -p \"require('node-addon-api').include\")",
       "include",
-      "<(module_root_dir)/relocatable/include"
+      "<(module_root_dir)/relocatable_libcurl/include"
     ],
     'libraries': [
-      "-L<(module_root_dir)/relocatable/lib -lcurl",
-      "-rpath @loader_path/../../relocatable",
+      "-L<(module_root_dir)/cmake_build -lwormhole",
+      "-rpath @loader_path/../../cmake_build",
     ],
     'dependencies': [
       "<!(node -p \"require('node-addon-api').gyp\")"

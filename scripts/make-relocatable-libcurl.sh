@@ -12,16 +12,17 @@ set -o nounset
 # paths with the `@loader_path` symbol, which is the path of the directory that
 # contains the library, by using the `install_name_tool` tool. The install name
 # of the entrypoint library is also changed into a path relative to the `@rpath`
-# path. The assumed `@rpath` here is the `relocatable` directory.
+# path. The assumed `@rpath` here is the `relocatable_libcurl` directory.
 
 cd "$PROJECT_ROOT"
 
-rm -rf relocatable
-mkdir relocatable
-cd relocatable
+rm -rf relocatable_libcurl
+mkdir relocatable_libcurl
+cd relocatable_libcurl
 
 # Copy the includes directory.
-cp -R "$PREFIX/include" .
+mkdir include
+cp -R "$PREFIX/include/curl" include
 
 mkdir lib
 cd lib
@@ -53,16 +54,17 @@ cp "/usr/local/opt/brotli/lib/libbrotlicommon.dylib" .
 
 # Set the identification name of the entrypoint dylib - libcurl.
 # So here, the requirement is that whatever dylib / executable that attempts to
-# load this should have an rpath pointing to the `relocatable` directory.
+# load this should have an rpath pointing to the `relocatable_libcurl`
+# directory.
 install_name_tool -id "@rpath/lib/libcurl.dylib" "libcurl.dylib"
 
 # Set the identification names of the dylibs. This step is totally optional
 # because these libraries are currently only loaded by libraries in the
-# `relocatable/lib` directory and not from any client application which would
-# load these indirectly through an rpath. This is being because of stylistic
-# reasons so that `otool -l` on these libraries don't contain the original paths
-# of these libraries which is only sensible on the host system where these were
-# built.
+# `relocatable_libcurl/lib` directory and not from any client application which
+# would load these indirectly through an rpath. This is being because of
+# stylistic reasons so that `otool -l` on these libraries don't contain the
+# original paths of these libraries which is only sensible on the host system
+# where these were built.
 
 # Change identification names of built libraries.
 install_name_tool -id "@rpath/lib/libcrypto.dylib" "libcrypto.dylib"
