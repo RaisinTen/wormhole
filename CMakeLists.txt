@@ -32,6 +32,10 @@ install(TARGETS wormhole
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
+install(DIRECTORY
+  "${PROJECT_SOURCE_DIR}/relocatable_libcurl/lib"
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/..")
+
 enable_testing()
 include("${PROJECT_SOURCE_DIR}/cmake/googletest.cmake")
 add_subdirectory(vendor/googletest)

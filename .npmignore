@@ -13,3 +13,4 @@ package_tests/
 scripts/
 test/
 vendor/
+relocatable_libcurl/
