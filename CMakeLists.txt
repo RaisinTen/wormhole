@@ -42,4 +42,9 @@ file(GLOB_RECURSE WORMHOLE_CXX_SOURCE_FILES
   src/*.cc src/*.h
   test/*.cc test/*.h
   binding/*.cc)
+
+file(GLOB_RECURSE STARSHIP_SH_SOURCE_FILES
+  scripts/*.sh)
+
 include("${PROJECT_SOURCE_DIR}/cmake/clang-format.cmake")
+include("${PROJECT_SOURCE_DIR}/cmake/shellcheck.cmake")

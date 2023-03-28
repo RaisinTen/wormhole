@@ -12,7 +12,8 @@ CDPATH='' cd -- "$(dirname -- "$0")"
 SCRIPT_DIRECTORY="$(pwd -P)"
 cd "$CWD"
 
-export PROJECT_ROOT="$(dirname $SCRIPT_DIRECTORY)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIRECTORY")"
+export PROJECT_ROOT
 export VENDOR="$PROJECT_ROOT/vendor"
 export BUILD="$PROJECT_ROOT/curl_build/vendor"
 export PREFIX="$PROJECT_ROOT/curl_build/vendor_install"

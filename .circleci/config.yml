@@ -66,6 +66,12 @@ commands:
           name: Run C++ linter
           command: cmake --build cmake_build --target clang_format_test
 
+  lint-sh:
+    steps:
+      - run:
+          name: Run Shellcheck for Shell scripts
+          command: cmake --build cmake_build --target shellcheck
+
   lint-js-library:
     steps:
       - run:
@@ -125,11 +131,12 @@ jobs:
           # TODO(RaisinTen): It should be possible to create a separate Brewfile
           # for this step.
           name: Install dependencies
-          command: brew install cmake clang-format
+          command: brew install cmake clang-format shellcheck
       - build-cmake-library
       # The C++ linter cannot be run before the build-cmake-library because the
       # command depends on the presence of the `cmake_build` directory.
       - lint-cpp-library
+      - lint-sh
       - test-cmake-library
       - persist_to_workspace:
           root: .
