@@ -1,6 +1,7 @@
 brew "cmake"
 brew "node"
 brew "clang-format"
+brew "shellcheck"
 
 brew "automake" # Used directly in `./scripts` to build curl and its dependencies.
 brew "coreutils" # So that `realpath` can be used.
