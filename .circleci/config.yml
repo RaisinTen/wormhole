@@ -171,6 +171,10 @@ jobs:
       - lint-js-library
       - build-npm-library
       - test-npm-library
+      - run:
+          command: mkdir -p package && npm pack --pack-destination package
+      - store_artifacts:
+          path: package
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
