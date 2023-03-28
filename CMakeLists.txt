@@ -10,9 +10,6 @@ add_library(wormhole SHARED
   src/request.cc
   )
 
-set_target_properties(wormhole PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(wormhole PROPERTIES SOVERSION 1)
-
 set_target_properties(wormhole PROPERTIES PUBLIC_HEADER include/request.h)
 
 target_include_directories(wormhole PRIVATE include)
