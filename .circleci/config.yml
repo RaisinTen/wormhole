@@ -66,6 +66,12 @@ commands:
           name: Run C++ linter
           command: cmake --build native_build --target clang_format_test
 
+  lint-sh:
+    steps:
+      - run:
+          name: Run Shellcheck for Shell scripts
+          command: cmake --build native_build --target shellcheck
+
   lint-js-library:
     steps:
       - run:
@@ -130,6 +136,7 @@ jobs:
       # The C++ linter cannot be run before the build-cmake-library because the
       # command depends on the presence of the `native_build` directory.
       - lint-cpp-library
+      - lint-sh
       - test-cmake-library
 
   build-and-test-npm-library:
