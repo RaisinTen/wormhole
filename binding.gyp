@@ -5,13 +5,10 @@
     "cflags_cc!": [ "-fno-exceptions" ],
     "sources": [
       "binding/binding.cc",
-      "include/request.h",
-      "src/request.cc",
     ],
     'include_dirs': [
       "<!@(node -p \"require('node-addon-api').include\")",
-      "include",
-      "<(module_root_dir)/relocatable_libcurl/include"
+      "relocatable_libwormhole/include"
     ],
     'libraries': [
       "-L<(module_root_dir)/relocatable_libwormhole/lib -lwormhole",
