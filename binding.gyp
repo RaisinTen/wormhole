@@ -14,8 +14,8 @@
       "<(module_root_dir)/relocatable_libcurl/include"
     ],
     'libraries': [
-      "-L<(module_root_dir)/cmake_build -lwormhole",
-      "-rpath @loader_path/../../cmake_build",
+      "-L<(module_root_dir)/relocatable_libwormhole/lib -lwormhole",
+      "-rpath @loader_path/../../relocatable_libwormhole",
     ],
     'dependencies': [
       "<!(node -p \"require('node-addon-api').gyp\")"

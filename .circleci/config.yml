@@ -52,7 +52,15 @@ commands:
     steps:
       - run:
           name: Build CMake library
-          command: cmake -S . -B cmake_build && cmake --build cmake_build
+          command: cmake -S . -B cmake_build && cmake --build cmake_build && cmake --install cmake_build --prefix relocatable_libwormhole && install_name_tool -id @rpath/lib/libwormhole.dylib relocatable_libwormhole/lib/libwormhole.dylib
+      - run:
+          name: Create relocatable_libwormhole.zip
+          command: zip -r relocatable_libwormhole.zip relocatable_libwormhole
+      - store_artifacts:
+          path: relocatable_libwormhole.zip
+      - run:
+          name: Delete relocatable_libwormhole.zip
+          command: rm relocatable_libwormhole.zip
 
   build-npm-library:
     steps:
@@ -141,9 +149,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - cmake_build/libwormhole.1.0.0.dylib
-            - cmake_build/libwormhole.1.dylib
-            - cmake_build/libwormhole.dylib
+            - relocatable_libwormhole
 
   build-and-test-npm-library:
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.

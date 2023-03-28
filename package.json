@@ -12,7 +12,7 @@
     "test": "mocha package_tests",
     "lint": "eslint index.js package_tests/",
     "format": "eslint --fix index.js package_tests/",
-    "cmake:build": "cmake -S . -B cmake_build && cmake --build cmake_build",
+    "cmake:build": "cmake -S . -B cmake_build && cmake --build cmake_build && cmake --install cmake_build --prefix relocatable_libwormhole && install_name_tool -id @rpath/lib/libwormhole.dylib relocatable_libwormhole/lib/libwormhole.dylib",
     "cmake:format": "cmake --build cmake_build --target clang_format",
     "cmake:test": "cmake_build/test/request_unit_test",
     "cmake:all": "npm run cmake:build && npm run cmake:format && npm run cmake:test",
