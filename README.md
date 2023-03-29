@@ -21,23 +21,17 @@ clang++ \
 #include <request.h>
 
 ...
-  wormhole::Response res = wormhole::request("https://postman-echo.com/get");
+  wormhole::Response res = wormhole::request("https://quic.aiortc.org/");
   std::string response_string(res.data, res.size);
   std::cout << response_string << std::endl;
 ...
 
 // Output:
-// {
-//   "args": {},
-//   "headers": {
-//     "x-forwarded-proto": "https",
-//     "x-forwarded-port": "443",
-//     "host": "postman-echo.com",
-//     "x-amzn-trace-id": "Root=1-63f373f3-73f715716ba031264ea53935",
-//     "accept": "*/*"
-//   },
-//   "url": "https://postman-echo.com/get"
-// }
+// ...
+// <p>
+//   Congratulations, you loaded this page using HTTP/3!
+// </p>
+// ...
 ```
 
 ### NPM package
