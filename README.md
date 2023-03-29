@@ -67,6 +67,12 @@ console.log(response);
 
 ### Curl with HTTP3 support
 
+#### Install dependencies
+
+```sh
+scripts/install-relocatable-libcurl-build-deps.sh
+```
+
 #### Build
 
 ```sh
@@ -84,7 +90,7 @@ console.log(response);
 #### Install dependencies
 
 ```sh
-brew bundle
+scripts/install-libwormhole-build-deps.sh
 ```
 
 #### Build
@@ -110,8 +116,9 @@ npm run cmake:format
 #### Install dependencies
 
 ```sh
-npm ci
+scripts/install-npm-library-build-deps.sh
 ```
+
 #### Build
 
 ```sh

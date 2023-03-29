@@ -9,30 +9,50 @@ executors:
     resource_class: macos.x86.medium.gen2
 
 commands:
-  dependencies:
+  install-relocatable-libcurl-build-deps:
     steps:
       - restore_cache:
           keys:
-            - v1-brew-{{ arch }}-{{ checksum "Brewfile" }}
+            - v1-brew-{{ arch }}-{{ checksum "scripts/install-relocatable-libcurl-build-deps.sh" }}
       - run:
           name: Installing dependencies
-          command: brew bundle
+          command: scripts/install-relocatable-libcurl-build-deps.sh
       - save_cache:
-          key: v1-brew-{{ arch }}-{{ checksum "Brewfile" }}
+          key: v1-brew-{{ arch }}-{{ checksum "scripts/install-relocatable-libcurl-build-deps.sh" }}
           paths:
             - /opt/homebrew/Library/Taps/homebrew/homebrew-bundle
             - /usr/local/Homebrew/Library/Taps/homebrew/homebrew-bundle
             - /Users/distiller/Library/Caches/Homebrew
 
-  install-npm-library-dependencies:
+  install-libwormhole-build-deps:
     steps:
+      - restore_cache:
+          keys:
+            - v1-brew-{{ arch }}-{{ checksum "scripts/install-libwormhole-build-deps.sh" }}
       - run:
-          name: Installing NPM dependencies
-          # We are passing `--ignore-scripts` here, so that the installation
-          # doesn't trigger `node-gyp rebuild` to run because that depends on
-          # some of the binaries in `curl_build/vendor_install`, which is not
-          # available until `scripts/build.js` is run.
-          command: npm ci --ignore-scripts
+          name: Installing dependencies
+          command: scripts/install-libwormhole-build-deps.sh
+      - save_cache:
+          key: v1-brew-{{ arch }}-{{ checksum "scripts/install-libwormhole-build-deps.sh" }}
+          paths:
+            - /opt/homebrew/Library/Taps/homebrew/homebrew-bundle
+            - /usr/local/Homebrew/Library/Taps/homebrew/homebrew-bundle
+            - /Users/distiller/Library/Caches/Homebrew
+
+  install-npm-library-build-deps:
+    steps:
+      - restore_cache:
+          keys:
+            - v1-brew-{{ arch }}-{{ checksum "scripts/install-npm-library-build-deps.sh" }}
+      - run:
+          name: Installing dependencies
+          command: scripts/install-npm-library-build-deps.sh
+      - save_cache:
+          key: v1-brew-{{ arch }}-{{ checksum "scripts/install-npm-library-build-deps.sh" }}
+          paths:
+            - /opt/homebrew/Library/Taps/homebrew/homebrew-bundle
+            - /usr/local/Homebrew/Library/Taps/homebrew/homebrew-bundle
+            - /Users/distiller/Library/Caches/Homebrew
 
   build-relocatable-libcurl:
     steps:
@@ -112,11 +132,19 @@ jobs:
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     executor: macos-x64
 
+    environment:
+      HOMEBREW_NO_ANALYTICS: 1
+      # This prevent brew from running:
+      # Running `brew update --preinstall`...
+      # as it's a slow operation and we should avoid such delays if we can help
+      # it.
+      HOMEBREW_NO_AUTO_UPDATE: 1
+
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
       - checkout
-      - dependencies
+      - install-relocatable-libcurl-build-deps
       - build-relocatable-libcurl
       - test-curl-build
       - persist_to_workspace:
@@ -129,17 +157,21 @@ jobs:
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     executor: macos-x64
 
+    environment:
+      HOMEBREW_NO_ANALYTICS: 1
+      # This prevent brew from running:
+      # Running `brew update --preinstall`...
+      # as it's a slow operation and we should avoid such delays if we can help
+      # it.
+      HOMEBREW_NO_AUTO_UPDATE: 1
+
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
       - checkout
       - attach_workspace:
           at: .
-      - run:
-          # TODO(RaisinTen): It should be possible to create a separate Brewfile
-          # for this step.
-          name: Install dependencies
-          command: brew install cmake clang-format shellcheck
+      - install-libwormhole-build-deps
       - build-cmake-library
       # The C++ linter cannot be run before the build-cmake-library because the
       # command depends on the presence of the `cmake_build` directory.
@@ -156,18 +188,21 @@ jobs:
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     executor: macos-x64
 
+    environment:
+      HOMEBREW_NO_ANALYTICS: 1
+      # This prevent brew from running:
+      # Running `brew update --preinstall`...
+      # as it's a slow operation and we should avoid such delays if we can help
+      # it.
+      HOMEBREW_NO_AUTO_UPDATE: 1
+
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
       - checkout
       - attach_workspace:
           at: .
-      - run:
-          # TODO(RaisinTen): It should be possible to create a separate Brewfile
-          # for this step.
-          name: Install dependencies
-          command: brew install node
-      - install-npm-library-dependencies
+      - install-npm-library-build-deps
       - lint-js-library
       - build-npm-library
       - test-npm-library
