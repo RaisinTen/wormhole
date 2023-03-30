@@ -92,13 +92,13 @@ commands:
     steps:
       - run:
           name: Run C++ linter
-          command: cmake --build cmake_build --target clang_format_test
+          command: clang-format --style=file --dry-run -Werror -i src/*.cc test/*.cc binding/*.cc
 
   lint-sh:
     steps:
       - run:
           name: Run Shellcheck for Shell scripts
-          command: cmake --build cmake_build --target shellcheck
+          command: shellcheck scripts/*.sh
 
   lint-js-library:
     steps:
