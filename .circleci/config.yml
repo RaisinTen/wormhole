@@ -54,6 +54,42 @@ commands:
             - /usr/local/Homebrew/Library/Taps/homebrew/homebrew-bundle
             - /Users/distiller/Library/Caches/Homebrew
 
+  lint-cpp:
+    steps:
+      - restore_cache:
+          keys:
+            - v1-brew-{{ arch }}-{{ checksum "scripts/install-clang-format.sh" }}
+      - run:
+          name: Installing clang-format
+          command: scripts/install-clang-format.sh
+      - save_cache:
+          key: v1-brew-{{ arch }}-{{ checksum "scripts/install-clang-format.sh" }}
+          paths:
+            - /opt/homebrew/Library/Taps/homebrew/homebrew-bundle
+            - /usr/local/Homebrew/Library/Taps/homebrew/homebrew-bundle
+            - /Users/distiller/Library/Caches/Homebrew
+      - run:
+          name: Run C++ linter
+          command: clang-format --style=file --dry-run -Werror -i src/*.cc test/*.cc binding/*.cc
+
+  lint-shell:
+    steps:
+      - restore_cache:
+          keys:
+            - v1-brew-{{ arch }}-{{ checksum "scripts/install-shellcheck.sh" }}
+      - run:
+          name: Installing shellcheck
+          command: scripts/install-shellcheck.sh
+      - save_cache:
+          key: v1-brew-{{ arch }}-{{ checksum "scripts/install-shellcheck.sh" }}
+          paths:
+            - /opt/homebrew/Library/Taps/homebrew/homebrew-bundle
+            - /usr/local/Homebrew/Library/Taps/homebrew/homebrew-bundle
+            - /Users/distiller/Library/Caches/Homebrew
+      - run:
+          name: Run Shellcheck for Shell scripts
+          command: shellcheck scripts/*.sh
+
   build-relocatable-libcurl:
     steps:
       - run:
@@ -87,18 +123,6 @@ commands:
       - run:
           name: Build NPM project
           command: npm run build
-
-  lint-cpp-library:
-    steps:
-      - run:
-          name: Run C++ linter
-          command: clang-format --style=file --dry-run -Werror -i src/*.cc test/*.cc binding/*.cc
-
-  lint-sh:
-    steps:
-      - run:
-          name: Run Shellcheck for Shell scripts
-          command: shellcheck scripts/*.sh
 
   lint-js-library:
     steps:
@@ -173,15 +197,69 @@ jobs:
           at: .
       - install-libwormhole-build-deps
       - build-cmake-library
-      # The C++ linter cannot be run before the build-cmake-library because the
-      # command depends on the presence of the `cmake_build` directory.
-      - lint-cpp-library
-      - lint-sh
       - test-cmake-library
       - persist_to_workspace:
           root: .
           paths:
             - relocatable_libwormhole
+
+  lint-js:
+    executor: macos-x64
+
+    environment:
+      HOMEBREW_NO_ANALYTICS: 1
+      # This prevent brew from running:
+      # Running `brew update --preinstall`...
+      # as it's a slow operation and we should avoid such delays if we can help
+      # it.
+      HOMEBREW_NO_AUTO_UPDATE: 1
+
+    # Add steps to the job
+    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - install-npm-library-build-deps
+      - lint-js-library
+
+  lint-cpp:
+    executor: macos-x64
+
+    environment:
+      HOMEBREW_NO_ANALYTICS: 1
+      # This prevent brew from running:
+      # Running `brew update --preinstall`...
+      # as it's a slow operation and we should avoid such delays if we can help
+      # it.
+      HOMEBREW_NO_AUTO_UPDATE: 1
+
+    # Add steps to the job
+    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - lint-cpp
+
+  lint-shell:
+    executor: macos-x64
+
+    environment:
+      HOMEBREW_NO_ANALYTICS: 1
+      # This prevent brew from running:
+      # Running `brew update --preinstall`...
+      # as it's a slow operation and we should avoid such delays if we can help
+      # it.
+      HOMEBREW_NO_AUTO_UPDATE: 1
+
+    # Add steps to the job
+    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - lint-shell
 
   build-and-test-npm-library:
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
@@ -203,7 +281,6 @@ jobs:
       - attach_workspace:
           at: .
       - install-npm-library-build-deps
-      - lint-js-library
       - build-npm-library
       - test-npm-library
       - run:
@@ -216,6 +293,9 @@ jobs:
 workflows:
   wormhole:
     jobs:
+      - lint-shell
+      - lint-cpp
+      - lint-js
       - build-and-test-relocatable-libcurl
       - build-and-test-cmake-library:
           requires:
