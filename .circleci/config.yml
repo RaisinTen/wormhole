@@ -54,7 +54,7 @@ commands:
             - /usr/local/Homebrew/Library/Taps/homebrew/homebrew-bundle
             - /Users/distiller/Library/Caches/Homebrew
 
-  lint-cpp:
+  lint-cpp-command:
     steps:
       - restore_cache:
           keys:
@@ -72,7 +72,7 @@ commands:
           name: Run C++ linter
           command: clang-format --style=file --dry-run -Werror -i src/*.cc test/*.cc binding/*.cc
 
-  lint-shell:
+  lint-shell-command:
     steps:
       - restore_cache:
           keys:
@@ -89,6 +89,12 @@ commands:
       - run:
           name: Run Shellcheck for Shell scripts
           command: shellcheck scripts/*.sh
+
+  lint-js-command:
+    steps:
+      - run:
+          name: Run JS linter
+          command: npm run lint
 
   build-relocatable-libcurl:
     steps:
@@ -123,12 +129,6 @@ commands:
       - run:
           name: Build NPM project
           command: npm run build
-
-  lint-js-library:
-    steps:
-      - run:
-          name: Run JS linter
-          command: npm run lint
 
   test-curl-build:
     steps:
@@ -218,10 +218,8 @@ jobs:
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
       - checkout
-      - attach_workspace:
-          at: .
       - install-npm-library-build-deps
-      - lint-js-library
+      - lint-js-command
 
   lint-cpp:
     executor: macos-x64
@@ -238,9 +236,7 @@ jobs:
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
       - checkout
-      - attach_workspace:
-          at: .
-      - lint-cpp
+      - lint-cpp-command
 
   lint-shell:
     executor: macos-x64
@@ -257,9 +253,7 @@ jobs:
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
       - checkout
-      - attach_workspace:
-          at: .
-      - lint-shell
+      - lint-shell-command
 
   build-and-test-npm-library:
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
