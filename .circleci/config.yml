@@ -7,6 +7,10 @@ executors:
     macos:
       xcode: "13.4.1"
     resource_class: macos.x86.medium.gen2
+  macos-arm64:
+    macos:
+      xcode: "14.2.0"
+    resource_class: macos.m1.large.gen1
 
 commands:
   install-relocatable-libcurl-build-deps:
@@ -152,10 +156,13 @@ commands:
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
   build-and-test-relocatable-libcurl:
+    parameters:
+      arch:
+        type: enum
+        enum: [ x64, arm64 ]
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
-    executor: macos-x64
-
+    executor: macos-<< parameters.arch >>
     environment:
       HOMEBREW_NO_ANALYTICS: 1
       # This prevent brew from running:
@@ -179,7 +186,13 @@ jobs:
   build-and-test-cmake-library:
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
-    executor: macos-x64
+    parameters:
+      arch:
+        type: enum
+        enum: [ x64, arm64 ]
+    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
+    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+    executor: macos-<< parameters.arch >>
 
     environment:
       HOMEBREW_NO_ANALYTICS: 1
@@ -256,9 +269,13 @@ jobs:
       - lint-shell-command
 
   build-and-test-npm-library:
+    parameters:
+      arch:
+        type: enum
+        enum: [ x64, arm64 ]
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
-    executor: macos-x64
+    executor: macos-<< parameters.arch >>
 
     environment:
       HOMEBREW_NO_ANALYTICS: 1
@@ -290,10 +307,22 @@ workflows:
       - lint-shell
       - lint-cpp
       - lint-js
-      - build-and-test-relocatable-libcurl
+      - build-and-test-relocatable-libcurl:
+          name: build-and-test-relocatable-libcurl-<< matrix.arch >>
+          matrix:
+            parameters:
+              arch: [x64, arm64]
       - build-and-test-cmake-library:
+          name: build-and-test-cmake-library-<< matrix.arch >>
+          matrix:
+            parameters:
+              arch: [x64, arm64]
           requires:
-            - build-and-test-relocatable-libcurl
+            - build-and-test-relocatable-libcurl-<< matrix.arch >>
       - build-and-test-npm-library:
+          name: build-and-test-npm-library-<< matrix.arch >>
+          matrix:
+            parameters:
+              arch: [x64, arm64]
           requires:
-            - build-and-test-cmake-library
+            - build-and-test-cmake-library-<< matrix.arch >>

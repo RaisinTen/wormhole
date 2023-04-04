@@ -27,6 +27,13 @@ cp -R "$PREFIX/include/curl" include
 mkdir lib
 cd lib
 
+if [ "$(arch)" = "arm64" ]
+then
+  SYSTEM_LIB_PREFIX="/opt/homebrew/opt"
+else
+  SYSTEM_LIB_PREFIX="/usr/local/opt"
+fi
+
 # Copy libraries by resolving the symlinks, so that `-lcurl` could be passed
 # to the linker instead of `-lcurl.4`.
 
@@ -37,20 +44,20 @@ cp "$PREFIX/lib/libnghttp3.dylib" .
 cp "$PREFIX/lib/libngtcp2.dylib" .
 cp "$PREFIX/lib/libngtcp2_crypto_openssl.dylib" .
 cp "$PREFIX/lib/libssl.dylib" .
-
+ 
 # Copy other installed dependency libraries.
 # These are all libcurl dependencies.
-cp "/usr/local/opt/libnghttp2/lib/libnghttp2.dylib" .
-cp "/usr/local/opt/libidn2/lib/libidn2.dylib" .
-cp "/usr/local/opt/zstd/lib/libzstd.dylib" .
-cp "/usr/local/opt/brotli/lib/libbrotlidec.dylib" .
+cp "$SYSTEM_LIB_PREFIX/libnghttp2/lib/libnghttp2.dylib" .
+cp "$SYSTEM_LIB_PREFIX/libidn2/lib/libidn2.dylib" .
+cp "$SYSTEM_LIB_PREFIX/zstd/lib/libzstd.dylib" .
+cp "$SYSTEM_LIB_PREFIX/brotli/lib/libbrotlidec.dylib" .
 
 # These are all libidn2 dependencies.
-cp "/usr/local/opt/libunistring/lib/libunistring.dylib" .
-cp "/usr/local/opt/gettext/lib/libintl.dylib" .
+cp "$SYSTEM_LIB_PREFIX/libunistring/lib/libunistring.dylib" .
+cp "$SYSTEM_LIB_PREFIX/gettext/lib/libintl.dylib" .
 
 # These are all libbrotlidec dependencies.
-cp "/usr/local/opt/brotli/lib/libbrotlicommon.dylib" .
+cp "$SYSTEM_LIB_PREFIX/brotli/lib/libbrotlicommon.dylib" .
 
 # Set the identification name of the entrypoint dylib - libcurl.
 # So here, the requirement is that whatever dylib / executable that attempts to
@@ -104,10 +111,10 @@ install_name_tool -change "$PREFIX/lib/libcrypto.81.3.dylib" "@loader_path/libcr
 # version suffixes. No need to do this for built libraries for now because we
 # are in full control of those version numbers.
 # Refs: https://unix.stackexchange.com/a/138658
-install_name_tool -change "/usr/local/opt/libnghttp2/lib/$(stat -f "%Y" "/usr/local/opt/libnghttp2/lib/libnghttp2.dylib")" "@loader_path/libnghttp2.dylib" "libcurl.dylib"
-install_name_tool -change "/usr/local/opt/libidn2/lib/$(stat -f "%Y" "/usr/local/opt/libidn2/lib/libidn2.dylib")" "@loader_path/libidn2.dylib" "libcurl.dylib"
-install_name_tool -change "/usr/local/opt/zstd/lib/$(stat -f "%Y" "/usr/local/opt/zstd/lib/libzstd.dylib")" "@loader_path/libzstd.dylib" "libcurl.dylib"
-install_name_tool -change "/usr/local/opt/brotli/lib/$(stat -f "%Y" "/usr/local/opt/brotli/lib/libbrotlidec.dylib")" "@loader_path/libbrotlidec.dylib" "libcurl.dylib"
+install_name_tool -change "$SYSTEM_LIB_PREFIX/libnghttp2/lib/$(stat -f "%Y" "$SYSTEM_LIB_PREFIX/libnghttp2/lib/libnghttp2.dylib")" "@loader_path/libnghttp2.dylib" "libcurl.dylib"
+install_name_tool -change "$SYSTEM_LIB_PREFIX/libidn2/lib/$(stat -f "%Y" "$SYSTEM_LIB_PREFIX/libidn2/lib/libidn2.dylib")" "@loader_path/libidn2.dylib" "libcurl.dylib"
+install_name_tool -change "$SYSTEM_LIB_PREFIX/zstd/lib/$(stat -f "%Y" "$SYSTEM_LIB_PREFIX/zstd/lib/libzstd.dylib")" "@loader_path/libzstd.dylib" "libcurl.dylib"
+install_name_tool -change "$SYSTEM_LIB_PREFIX/brotli/lib/$(stat -f "%Y" "$SYSTEM_LIB_PREFIX/brotli/lib/libbrotlidec.dylib")" "@loader_path/libbrotlidec.dylib" "libcurl.dylib"
 
 # Change the dependent shared library install names in libngtcp2_crypto_openssl
 install_name_tool -change "$PREFIX/lib/libngtcp2.10.dylib" "@loader_path/libngtcp2.dylib" "libngtcp2_crypto_openssl.dylib"
@@ -120,11 +127,24 @@ install_name_tool -change "$PREFIX/lib/libcrypto.81.3.dylib" "@loader_path/libcr
 # Change the dependent shared library install names in installed libraries
 
 # Change the dependent shared library install names in libidn2
-install_name_tool -change "/usr/local/opt/libunistring/lib/$(stat -f "%Y" "/usr/local/opt/libunistring/lib/libunistring.dylib")" "@loader_path/libunistring.dylib" "libidn2.dylib"
-install_name_tool -change "/usr/local/opt/gettext/lib/$(stat -f "%Y" "/usr/local/opt/gettext/lib/libintl.dylib")" "@loader_path/libintl.dylib" "libidn2.dylib"
+install_name_tool -change "$SYSTEM_LIB_PREFIX/libunistring/lib/$(stat -f "%Y" "$SYSTEM_LIB_PREFIX/libunistring/lib/libunistring.dylib")" "@loader_path/libunistring.dylib" "libidn2.dylib"
+install_name_tool -change "$SYSTEM_LIB_PREFIX/gettext/lib/$(stat -f "%Y" "$SYSTEM_LIB_PREFIX/gettext/lib/libintl.dylib")" "@loader_path/libintl.dylib" "libidn2.dylib"
 
 # Change the dependent shared library install names in libbrotlidec
 # Note that unlike the other cases, the install name of libbrotlicommon in
 # libbrotlidec is not an absolute path but rather a relative path using
 # `@loader_path`.
-install_name_tool -change "@loader_path/$(stat -f "%Y" /usr/local/opt/brotli/lib/libbrotlicommon.dylib)" "@loader_path/libbrotlicommon.dylib" "libbrotlidec.dylib"
+install_name_tool -change "@loader_path/$(stat -f "%Y" $SYSTEM_LIB_PREFIX/brotli/lib/libbrotlicommon.dylib)" "@loader_path/libbrotlicommon.dylib" "libbrotlidec.dylib"
+
+# Replace the invalidated signature.
+# NOTE: We tried removing the signatures before running the `install_name_tool`
+# command but `install_name_tool` was failing with the error discussed in
+# https://stackoverflow.com/q/48324224:
+# install_name_tool: fatal error: file not in an order that can be processed (link edit information does not fill the __LINKEDIT segment)
+# Instead of using MachOView to fiddle with `__LINKEDIT`'s `File Size`, this is
+# using another approach that has been discussed in
+# https://bytemeta.vip/repo/ezQuake/ezquake-source/issues/624
+# i.e., to remove the invalidated signature after manipulating the binary and
+# resign it.
+find . -type f -name "*.dylib" -exec codesign --remove-signature "{}" \;
+find . -type f -name "*.dylib" -exec codesign --sign - "{}" \;
