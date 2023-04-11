@@ -47,7 +47,7 @@ Use the package in your script:
 
 ```js
 const wormhole = require('@postman/wormhole');
-const response = wormhole.request('https://postman-echo.com/get');
+const response = await wormhole.request('https://postman-echo.com/get');
 console.log(response);
 
 // Output:

@@ -5,7 +5,7 @@
   "targets": [{
     "target_name": "wormhole",
     "cflags!": [ "-fno-exceptions" ],
-    "cflags_cc!": [ "-fno-exceptions" ],
+    "cflags_cc!": [ "-fno-exceptions", "-std=c++17" ],
     "sources": [
       "binding/binding.cc",
     ],
@@ -20,6 +20,9 @@
     'dependencies': [
       "<!(node -p \"require('node-addon-api').gyp\")"
     ],
-    'defines': [ 'NAPI_DISABLE_CPP_EXCEPTIONS' ]
+    'defines': [ 'NAPI_DISABLE_CPP_EXCEPTIONS' ],
+    'xcode_settings': {
+      'CLANG_CXX_LANGUAGE_STANDARD': 'c++17',
+    }
   }]
 }

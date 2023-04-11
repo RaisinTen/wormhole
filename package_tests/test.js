@@ -7,7 +7,11 @@ const {
 const wormhole = require('..');
 
 describe('Basic HTTP test', async () => {
-  const response = wormhole.request('https://postman-echo.com/get');
+  let response;
+
+  it('request', async () => {
+    response = await wormhole.request('https://postman-echo.com/get');
+  });
 
   it('code', () => {
     strictEqual(response.code, 200);
@@ -29,8 +33,12 @@ describe('Basic HTTP test', async () => {
 });
 
 describe('Basic HTTP3 test', async () => {
-  // Found this url in https://bagder.github.io/HTTP3-test/.
-  const response = wormhole.request('https://quic.aiortc.org/');
+  let response
+
+  it('request', async () => {
+    // Found this url in https://bagder.github.io/HTTP3-test/.
+    response = await wormhole.request('https://quic.aiortc.org/');
+  });
 
   it('code', () => {
     strictEqual(response.code, 200);
@@ -42,7 +50,11 @@ describe('Basic HTTP3 test', async () => {
 });
 
 describe('404 not found', async () => {
-  const response = wormhole.request('https://example.com/404-not-found');
+  let response;
+
+  it('request', async () => {
+    response = await wormhole.request('https://example.com/404-not-found');
+  });
 
   it('code', () => {
     strictEqual(response.code, 404);
