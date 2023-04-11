@@ -3,7 +3,7 @@
 version: 2.1
 
 executors:
-  macos-x64:
+  macos-x86_64:
     macos:
       xcode: "13.4.1"
     resource_class: macos.x86.medium.gen2
@@ -115,18 +115,22 @@ commands:
           command: rm relocatable_libcurl.zip
 
   build-cmake-library:
+    parameters:
+      arch:
+        type: enum
+        enum: [ x86_64, arm64 ]
     steps:
       - run:
           name: Build CMake library
-          command: cmake -S . -B cmake_build && cmake --build cmake_build && cmake --install cmake_build --prefix relocatable_libwormhole && install_name_tool -id @rpath/lib/libwormhole.dylib relocatable_libwormhole/lib/libwormhole.dylib
+          command: cmake -S . -B cmake_build && cmake --build cmake_build && ./scripts/make-relocatable-libwormhole.sh
       - run:
-          name: Create relocatable_libwormhole.zip
-          command: zip -r relocatable_libwormhole.zip relocatable_libwormhole
+          name: Create relocatable_libwormhole_<< parameters.arch >>.zip
+          command: zip -r relocatable_libwormhole_<< parameters.arch >>.zip relocatable_libwormhole_<< parameters.arch >>
       - store_artifacts:
-          path: relocatable_libwormhole.zip
+          path: relocatable_libwormhole_<< parameters.arch >>.zip
       - run:
-          name: Delete relocatable_libwormhole.zip
-          command: rm relocatable_libwormhole.zip
+          name: Delete relocatable_libwormhole_<< parameters.arch >>.zip
+          command: rm relocatable_libwormhole_<< parameters.arch >>.zip
 
   build-npm-library:
     steps:
@@ -159,7 +163,7 @@ jobs:
     parameters:
       arch:
         type: enum
-        enum: [ x64, arm64 ]
+        enum: [ x86_64, arm64 ]
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     executor: macos-<< parameters.arch >>
@@ -189,7 +193,7 @@ jobs:
     parameters:
       arch:
         type: enum
-        enum: [ x64, arm64 ]
+        enum: [ x86_64, arm64 ]
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     executor: macos-<< parameters.arch >>
@@ -209,15 +213,16 @@ jobs:
       - attach_workspace:
           at: .
       - install-libwormhole-build-deps
-      - build-cmake-library
+      - build-cmake-library:
+            arch: << parameters.arch >>
       - test-cmake-library
       - persist_to_workspace:
           root: .
           paths:
-            - relocatable_libwormhole
+            - relocatable_libwormhole_<< parameters.arch >>
 
   lint-js:
-    executor: macos-x64
+    executor: macos-x86_64
 
     environment:
       HOMEBREW_NO_ANALYTICS: 1
@@ -235,7 +240,7 @@ jobs:
       - lint-js-command
 
   lint-cpp:
-    executor: macos-x64
+    executor: macos-x86_64
 
     environment:
       HOMEBREW_NO_ANALYTICS: 1
@@ -252,7 +257,7 @@ jobs:
       - lint-cpp-command
 
   lint-shell:
-    executor: macos-x64
+    executor: macos-x86_64
 
     environment:
       HOMEBREW_NO_ANALYTICS: 1
@@ -272,7 +277,7 @@ jobs:
     parameters:
       arch:
         type: enum
-        enum: [ x64, arm64 ]
+        enum: [ x86_64, arm64 ]
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     executor: macos-<< parameters.arch >>
@@ -311,18 +316,18 @@ workflows:
           name: build-and-test-relocatable-libcurl-<< matrix.arch >>
           matrix:
             parameters:
-              arch: [x64, arm64]
+              arch: [x86_64, arm64]
       - build-and-test-cmake-library:
           name: build-and-test-cmake-library-<< matrix.arch >>
           matrix:
             parameters:
-              arch: [x64, arm64]
+              arch: [x86_64, arm64]
           requires:
             - build-and-test-relocatable-libcurl-<< matrix.arch >>
       - build-and-test-npm-library:
           name: build-and-test-npm-library-<< matrix.arch >>
           matrix:
             parameters:
-              arch: [x64, arm64]
+              arch: [x86_64, arm64]
           requires:
             - build-and-test-cmake-library-<< matrix.arch >>

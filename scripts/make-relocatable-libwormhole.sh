@@ -9,12 +9,14 @@ set -o nounset
 # it is possible to move the directory containing these libraries to another
 # location and still be able to link to these and use these correctly.
 
-# It will copy the dependency tree of libwormhole into the `relocatable_libwormhole` directory.
-cmake --install cmake_build --prefix relocatable_libwormhole
+RELOCATABLE_LIBWORMHOLE_DIR="relocatable_libwormhole_$(uname -m)"
+
+# It will copy the dependency tree of libwormhole into the `relocatable_libwormhole_<arch>` directory.
+cmake --install cmake_build --prefix "$RELOCATABLE_LIBWORMHOLE_DIR"
 
 # The install name of the entrypoint library is also changed into a path relative to the `@rpath`
-# path. The assumed `@rpath` here is the `relocatable_libwormhole` directory.
-install_name_tool -id @rpath/lib/libwormhole.dylib relocatable_libwormhole/lib/libwormhole.dylib
+# path. The assumed `@rpath` here is the `relocatable_libwormhole_<arch>` directory.
+install_name_tool -id @rpath/lib/libwormhole.dylib "$RELOCATABLE_LIBWORMHOLE_DIR/lib/libwormhole.dylib"
 
 # Replace the invalidated signature.
 # NOTE: We tried removing the signatures before running the `install_name_tool`
@@ -26,5 +28,5 @@ install_name_tool -id @rpath/lib/libwormhole.dylib relocatable_libwormhole/lib/l
 # https://bytemeta.vip/repo/ezQuake/ezquake-source/issues/624
 # i.e., to remove the invalidated signature after manipulating the binary and
 # resign it.
-codesign --remove-signature relocatable_libwormhole/lib/libwormhole.dylib
-codesign --sign - relocatable_libwormhole/lib/libwormhole.dylib
+codesign --remove-signature "$RELOCATABLE_LIBWORMHOLE_DIR/lib/libwormhole.dylib"
+codesign --sign - "$RELOCATABLE_LIBWORMHOLE_DIR/lib/libwormhole.dylib"
