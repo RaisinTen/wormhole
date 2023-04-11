@@ -136,7 +136,7 @@ commands:
     steps:
       - run:
           name: Build NPM project
-          command: npm run build
+          command: npm run build --verbose
 
   test-curl-build:
     steps:
