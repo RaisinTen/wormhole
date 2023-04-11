@@ -4,7 +4,7 @@
 
 #include <string>
 
-Napi::String Request(const Napi::CallbackInfo &info) {
+Napi::Object Request(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
 
   if (!info[0].IsString()) {
@@ -18,7 +18,10 @@ Napi::String Request(const Napi::CallbackInfo &info) {
   wormhole::Response res = wormhole::request(url);
 
   std::string response_string(res.data, res.size);
-  Napi::String returnValue = Napi::String::New(env, response_string);
+
+  Napi::Object returnValue = Napi::Object::New(env);
+  returnValue.Set("body", response_string);
+  returnValue.Set("code", res.code);
 
   return returnValue;
 }

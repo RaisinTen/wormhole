@@ -75,6 +75,8 @@ Response request(const std::string_view url) {
               curl_easy_strerror(res));
     }
 
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &data.code);
+
     curl_easy_cleanup(curl);
   }
   return data;

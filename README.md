@@ -51,15 +51,18 @@ console.log(response);
 
 // Output:
 // {
-//   "args": {},
-//   "headers": {
-//     "x-forwarded-proto": "https",
-//     "x-forwarded-port": "443",
-//     "host": "postman-echo.com",
-//     "x-amzn-trace-id": "Root=1-63f373f3-73f715716ba031264ea53935",
-//     "accept": "*/*"
-//   },
-//   "url": "https://postman-echo.com/get"
+//   body: '{\n' +
+//     '  "args": {},\n' +
+//     '  "headers": {\n' +
+//     '    "x-forwarded-proto": "https",\n' +
+//     '    "x-forwarded-port": "443",\n' +
+//     '    "host": "postman-echo.com",\n' +
+//     '    "x-amzn-trace-id": "Root=1-64351173-097ce76b03cb782e1576ba51",\n' +
+//     '    "accept": "*/*"\n' +
+//     '  },\n' +
+//     '  "url": "https://postman-echo.com/get"\n' +
+//     '}',
+//   code: 200
 // }
 ```
 

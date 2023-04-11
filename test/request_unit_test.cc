@@ -6,6 +6,7 @@
 
 TEST(http, http_basic) {
   wormhole::Response res = wormhole::request("https://postman-echo.com/get");
+  ASSERT_EQ(res.code, 200);
   std::string response_string(res.data, res.size);
   ASSERT_NE(response_string.find(R"("url": "https://postman-echo.com/get")"),
             std::string::npos);
@@ -14,8 +15,15 @@ TEST(http, http_basic) {
 TEST(http, http_quic) {
   // Found this url in https://bagder.github.io/HTTP3-test/.
   wormhole::Response res = wormhole::request("https://quic.aiortc.org/");
+  ASSERT_EQ(res.code, 200);
   std::string response_string(res.data, res.size);
   ASSERT_NE(response_string.find(
                 "Congratulations, you loaded this page using HTTP/3"),
             std::string::npos);
+}
+
+TEST(http, http_404_not_found) {
+  wormhole::Response res =
+      wormhole::request("https://example.com/404-not-found");
+  ASSERT_EQ(res.code, 404);
 }

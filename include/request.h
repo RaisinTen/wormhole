@@ -8,6 +8,7 @@ namespace wormhole {
 struct Response {
   char* data;
   size_t size;
+  long code;
 };
 
 Response request(const std::string_view url);
