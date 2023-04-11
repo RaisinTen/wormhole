@@ -11,7 +11,12 @@ public:
       : Napi::AsyncWorker(env), url_(std::move(url)),
         deferred_(Napi::Promise::Deferred::New(env)) {}
 
-  void Execute() { response_ = wormhole::request(url_); }
+  void Execute() {
+    response_ = wormhole::request(url_);
+    if (response_->error.has_value()) {
+      SetError(response_->error.value());
+    }
+  }
 
   void OnOK() {
     Napi::Object response_object = Napi::Object::New(Env());

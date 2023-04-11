@@ -2,6 +2,7 @@ const {
   deepStrictEqual,
   ok,
   strictEqual,
+  rejects,
 } = require('node:assert');
 
 const wormhole = require('..');
@@ -58,5 +59,16 @@ describe('404 not found', async () => {
 
   it('code', () => {
     strictEqual(response.code, 404);
+  });
+});
+
+describe('Illegal URL format', async () => {
+  it('request', async () => {
+    await rejects(async () => {
+      await wormhole.request('abc');
+    }, {
+      name: 'Error',
+      message: 'URL using bad/illegal format or missing URL'
+    });
   });
 });

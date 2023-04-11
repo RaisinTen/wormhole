@@ -2,6 +2,8 @@
 
 #include <curl/curl.h>
 
+#include <optional>
+#include <string>
 #include <string_view>
 
 #include <stdio.h>
@@ -29,7 +31,7 @@ size_t write_data(void *ptr, size_t size, size_t nmemb,
     if (data->data) {
       free(data->data);
     }
-    fprintf(stderr, "Failed to allocate memory.\n");
+    data->error = "Failed to allocate memory.";
     return 0;
   }
 
@@ -50,7 +52,7 @@ Response request(const std::string_view url) {
   data.size = 0;
   data.data = (char *)malloc(4096); /* reasonable size initial buffer */
   if (NULL == data.data) {
-    fprintf(stderr, "Failed to allocate memory.\n");
+    data.error = "Failed to allocate memory.";
     return data;
   }
 
@@ -71,11 +73,10 @@ Response request(const std::string_view url) {
 
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
-      fprintf(stderr, "curl_easy_perform() failed: %s\n",
-              curl_easy_strerror(res));
+      data.error = curl_easy_strerror(res);
+    } else {
+      curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &data.code);
     }
-
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &data.code);
 
     curl_easy_cleanup(curl);
   }
