@@ -148,13 +148,17 @@ commands:
     steps:
       - run:
           name: Test CMake library
-          command: ./cmake_build/test/request_unit_test
+          command: ctest --test-dir cmake_build --output-junit junit.xml --verbose
+      - store_test_results:
+          path: cmake_build/junit.xml
 
   test-npm-library:
     steps:
       - run:
           name: Test NPM library
-          command: npm test
+          command: npm test -- --reporter mocha-junit-reporter
+      - store_test_results:
+          path: test-results.xml
 
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs

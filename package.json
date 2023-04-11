@@ -14,7 +14,7 @@
     "format": "eslint --fix index.js package_tests/",
     "cmake:build": "cmake -S . -B cmake_build && cmake --build cmake_build && ./scripts/make-relocatable-libwormhole.sh",
     "native:format": "clang-format --style=file -i src/*.cc test/*.cc binding/*.cc",
-    "cmake:test": "cmake_build/test/request_unit_test",
+    "cmake:test": "ctest --test-dir cmake_build",
     "cmake:all": "npm run cmake:build && npm run cmake:format && npm run cmake:test",
     "cmake:clean": "rm -rf cmake_build",
     "shell:lint": "shellcheck scripts/*.sh"
@@ -31,7 +31,8 @@
   "homepage": "https://github.com/postmanlabs/wormhole#readme",
   "devDependencies": {
     "eslint": "^8.36.0",
-    "mocha": "^10.2.0"
+    "mocha": "^10.2.0",
+    "mocha-junit-reporter": "^2.2.0"
   },
   "dependencies": {
     "node-addon-api": "^6.0.0"

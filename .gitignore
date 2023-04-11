@@ -17,3 +17,4 @@ relocatable_libcurl
 relocatable_libwormhole_arm64
 relocatable_libwormhole_x86_64
 package/
+test-results.xml
