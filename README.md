@@ -11,12 +11,15 @@ Compile with the wormhole shared library present in `relocatable_libwormhole_<ar
 
 ```sh
 clang++ \
+  -std=c++17 \
   <entry/point.cc> \
   -I<path/to/relocatable_libwormhole_<arch>/include> \
   -L<path/to/relocatable_libwormhole_<arch>/lib> \
   -lwormhole \
   -rpath @executable_path/<relative/path/to/relocatable_libwormhole_<arch>>
 ```
+
+Use the library in your program:
 
 ```cc
 #include <request.h>
@@ -35,6 +38,8 @@ clang++ \
 // ...
 ```
 
+Check out the [C++ API documentation](docs/C++-API.md).
+
 ### NPM package
 
 Download the package:
@@ -47,8 +52,7 @@ Use the package in your script:
 
 ```js
 const wormhole = require('@postman/wormhole');
-const response = await wormhole.request('https://postman-echo.com/get');
-console.log(response);
+await wormhole.request('https://postman-echo.com/get');
 
 // Output:
 // {
@@ -67,82 +71,10 @@ console.log(response);
 // }
 ```
 
-## Building
+Check out the [JS API documentation](docs/JS-API.md).
 
-### Curl with HTTP3 support
+## Major features
 
-#### Install dependencies
-
-```sh
-scripts/install-relocatable-libcurl-build-deps.sh
-```
-
-#### Build
-
-```sh
-./scripts/build.sh
-```
-
-#### Test
-
-```sh
-./curl_build/vendor_install/bin/curl --http3 https://postman-echo.com/get
-```
-
-### C++ library
-
-#### Install dependencies
-
-```sh
-scripts/install-libwormhole-build-deps.sh
-```
-
-#### Build
-
-```sh
-npm run cmake:build
-```
-
-#### Test
-
-```sh
-npm run cmake:test
-```
-
-#### Format
-
-```sh
-npm run cmake:format
-```
-
-### NPM package
-
-#### Install dependencies
-
-```sh
-scripts/install-npm-library-build-deps.sh
-```
-
-#### Build
-
-```sh
-npm run build
-```
-
-#### Test
-
-```sh
-npm test
-```
-
-#### Format
-
-```sh
-npm run format
-```
-
-#### Lint
-
-```sh
-npm run lint
-```
+* HTTP/3 (QUIC protocol) support
+* HTTP/2 support
+* OpenSSL as the backend for cryptography
