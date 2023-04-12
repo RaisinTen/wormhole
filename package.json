@@ -13,7 +13,7 @@
     "lint": "eslint index.js package_tests/",
     "format": "eslint --fix index.js package_tests/",
     "cmake:build": "cmake -S . -B cmake_build && cmake --build cmake_build && ./scripts/make-relocatable-libwormhole.sh",
-    "native:format": "clang-format --style=file -i src/*.cc test/*.cc binding/*.cc",
+    "native:format": "clang-format --style=file -i src/*.cc test/*.cc binding/*.cc include/*.h",
     "cmake:test": "ctest --test-dir cmake_build",
     "cmake:all": "npm run cmake:build && npm run cmake:format && npm run cmake:test",
     "cmake:clean": "rm -rf cmake_build",

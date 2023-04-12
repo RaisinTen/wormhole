@@ -8,7 +8,7 @@
 namespace wormhole {
 
 struct Response {
-  char* data;
+  char *data;
   size_t size;
   long code;
   std::optional<std::string> error;

@@ -74,7 +74,7 @@ commands:
             - /Users/distiller/Library/Caches/Homebrew
       - run:
           name: Run C++ linter
-          command: clang-format --style=file --dry-run -Werror -i src/*.cc test/*.cc binding/*.cc
+          command: clang-format --style=file --dry-run -Werror -i src/*.cc test/*.cc binding/*.cc include/*.h
 
   lint-shell-command:
     steps:
