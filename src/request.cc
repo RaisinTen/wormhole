@@ -81,6 +81,11 @@ Response request(const std::string_view url, RequestOptions options) {
 #undef V
     }
 
+    if (options.ca_bundle().has_value()) {
+      curl_easy_setopt(curl, CURLOPT_CAINFO,
+                       options.ca_bundle().value().c_str());
+    }
+
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
       data.error = curl_easy_strerror(res);

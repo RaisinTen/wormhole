@@ -2,6 +2,7 @@
 
 #include <request.h>
 
+#include <filesystem>
 #include <optional>
 #include <string>
 
@@ -84,6 +85,25 @@ Napi::Value Request(const Napi::CallbackInfo &info) {
             .ThrowAsJavaScriptException();
         return {};
       }
+    }
+
+    if (options.Has("ca")) {
+      Napi::Value value = options.Get("ca");
+      if (!value.IsString()) {
+        Napi::TypeError::New(env, "The ca needs to be a string.")
+            .ThrowAsJavaScriptException();
+        return {};
+      }
+
+      std::string ca_string(Napi::String(env, value));
+      std::filesystem::path ca_path{ca_string};
+      std::error_code error_code;
+      if (!std::filesystem::exists(ca_path, error_code)) {
+        Napi::TypeError::New(env, "Invalid ca bundle.")
+            .ThrowAsJavaScriptException();
+        return {};
+      }
+      request_options_builder.set_ca_bundle(std::move(ca_path));
     }
   }
 

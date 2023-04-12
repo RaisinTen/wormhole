@@ -33,6 +33,65 @@ describe('Basic HTTP test', async () => {
   });
 });
 
+// TODO(RaisinTen): When this test is moved to the bottom of this file, for some
+// reason, the request call fails with a `Error: Couldn't connect to server`
+// exception.
+describe('Basic HTTP2 test', async () => {
+  let response;
+  let server;
+  let port;
+  let ca;
+
+  before(async () => {
+    // HTTP2 server setup code from the Node.js `http2` module documentation.
+    // Refs: https://nodejs.org/api/http2.html#server-side-example
+    const http2 = require('node:http2');
+    const fs = require('node:fs');
+    const path = require('node:path');
+
+    ca = path.join(__dirname, 'fixtures', 'http2-test-certificate', 'localhost-cert.pem');
+
+    server = http2.createSecureServer({
+      key: fs.readFileSync(path.join(__dirname, 'fixtures', 'http2-test-certificate', 'localhost-privkey.pem')),
+      cert: fs.readFileSync(ca),
+    });
+
+    server.on('stream', (stream) => {
+      // stream is a Duplex
+      stream.respond({
+        'content-type': 'text/html; charset=utf-8',
+        ':status': 200,
+      });
+      stream.end('Hello, world!');
+    });
+
+    await (new Promise((resolve) => {
+      server.listen(0, () => {
+        resolve();
+      });
+    }));
+    ok(server.listening);
+
+    ({ port } = server.address());
+  });
+
+  it('request', async () => {
+    response = await wormhole.request(`https://localhost:${port}`, { ca });
+  });
+
+  it('code', () => {
+    strictEqual(response.code, 200);
+  });
+
+  it('body', () => {
+    strictEqual(response.body, 'Hello, world!');
+  });
+
+  after(() => {
+    server.close();
+  });
+});
+
 describe('Basic HTTP3 test', async () => {
   let response
 
