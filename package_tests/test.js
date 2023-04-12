@@ -12,7 +12,7 @@ describe('Basic HTTP test', async () => {
 
   it('request', async () => {
     response = await wormhole.request('https://postman-echo.com/get');
-  });
+  }).timeout(6_000);
 
   it('code', () => {
     strictEqual(response.code, 200);
@@ -39,7 +39,7 @@ describe('Basic HTTP3 test', async () => {
   it('request', async () => {
     // Found this url in https://bagder.github.io/HTTP3-test/.
     response = await wormhole.request('https://quic.aiortc.org/');
-  });
+  }).timeout(6_000);
 
   it('code', () => {
     strictEqual(response.code, 200);
@@ -78,7 +78,7 @@ describe('POST request', async () => {
 
   it('request', async () => {
     response = await wormhole.request('https://postman-echo.com/post', { method: 'POST' });
-  });
+  }).timeout(6_000);
 
   it('code', () => {
     strictEqual(response.code, 200);
