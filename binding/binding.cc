@@ -7,12 +7,14 @@
 
 class HttpRequestWorker : public Napi::AsyncWorker {
 public:
-  HttpRequestWorker(Napi::Env env, std::string url)
+  HttpRequestWorker(Napi::Env env, std::string url,
+                    wormhole::RequestOptions options)
       : Napi::AsyncWorker(env), url_(std::move(url)),
+        options_(std::move(options)),
         deferred_(Napi::Promise::Deferred::New(env)) {}
 
   void Execute() {
-    response_ = wormhole::request(url_);
+    response_ = wormhole::request(url_, options_);
     if (response_->error.has_value()) {
       SetError(response_->error.value());
     }
@@ -32,6 +34,7 @@ public:
 
 private:
   std::string url_;
+  wormhole::RequestOptions options_;
   Napi::Promise::Deferred deferred_;
   std::optional<wormhole::Response> response_;
 };
@@ -47,7 +50,45 @@ Napi::Value Request(const Napi::CallbackInfo &info) {
 
   const std::string url = info[0].As<Napi::String>().Utf8Value();
 
-  HttpRequestWorker *worker = new HttpRequestWorker(env, url);
+  wormhole::RequestOptionsBuilder request_options_builder;
+
+  if (info.Length() >= 2) {
+    if (!info[1].IsObject()) {
+      Napi::TypeError::New(env, "The second argument needs to be an object.")
+          .ThrowAsJavaScriptException();
+      return {};
+    }
+
+    Napi::Object options(env, info[1]);
+
+    if (options.Has("method")) {
+      Napi::Value value = options.Get("method");
+      if (!value.IsString()) {
+        Napi::TypeError::New(env, "The method needs to be a string.")
+            .ThrowAsJavaScriptException();
+        return {};
+      }
+
+      std::string method_string(Napi::String(env, value));
+
+      if (false) {
+#define V(HTTP_METHOD)                                                         \
+  }                                                                            \
+  else if (method_string == #HTTP_METHOD) {                                    \
+    request_options_builder.set_method(wormhole::Method::HTTP_METHOD);
+
+        WORMHOLE_HTTP_METHODS(V)
+#undef V
+      } else {
+        Napi::TypeError::New(env, "Invalid method string.")
+            .ThrowAsJavaScriptException();
+        return {};
+      }
+    }
+  }
+
+  HttpRequestWorker *worker =
+      new HttpRequestWorker(env, url, request_options_builder.build());
   auto promise = worker->GetPromise();
   worker->Queue();
   return promise;

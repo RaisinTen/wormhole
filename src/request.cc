@@ -45,7 +45,7 @@ size_t write_data(void *ptr, size_t size, size_t nmemb,
 
 namespace wormhole {
 
-Response request(const std::string_view url) {
+Response request(const std::string_view url, RequestOptions options) {
   CURL *curl;
 
   Response data;
@@ -70,6 +70,16 @@ Response request(const std::string_view url) {
     // to use HTTP/3 to the host given in the URL, with fallback to earlier HTTP
     // versions if needed.
     curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, (long)CURL_HTTP_VERSION_3);
+
+    switch (options.method()) {
+#define V(HTTP_METHOD)                                                         \
+  case Method::HTTP_METHOD:                                                    \
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, #HTTP_METHOD);               \
+    break;
+
+      WORMHOLE_HTTP_METHODS(V)
+#undef V
+    }
 
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {

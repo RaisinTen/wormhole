@@ -72,3 +72,29 @@ describe('Illegal URL format', async () => {
     });
   });
 });
+
+describe('POST request', async () => {
+  let response;
+
+  it('request', async () => {
+    response = await wormhole.request('https://postman-echo.com/post', { method: 'POST' });
+  });
+
+  it('code', () => {
+    strictEqual(response.code, 200);
+  });
+
+  const responseJSON = JSON.parse(response.body);
+
+  it('headers', () => {
+    strictEqual(typeof responseJSON.headers, 'object');
+  });
+
+  it('args', () => {
+    deepStrictEqual(responseJSON.args, {});
+  });
+
+  it('url', () => {
+    strictEqual(responseJSON.url, 'https://postman-echo.com/post');
+  });
+});

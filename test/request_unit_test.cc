@@ -36,3 +36,15 @@ TEST(http, illegal_url_format) {
   ASSERT_EQ(res.error.has_value(), true);
   ASSERT_EQ(res.error.value(), "URL using bad/illegal format or missing URL");
 }
+
+TEST(http, post_request) {
+  wormhole::Response res = wormhole::request(
+      "https://postman-echo.com/post", wormhole::RequestOptionsBuilder()
+                                           .set_method(wormhole::Method::POST)
+                                           .build());
+  ASSERT_EQ(res.error.has_value(), false);
+  ASSERT_EQ(res.code, 200);
+  std::string response_string(res.data, res.size);
+  ASSERT_NE(response_string.find(R"("url": "https://postman-echo.com/post")"),
+            std::string::npos);
+}
