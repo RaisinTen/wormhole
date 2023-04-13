@@ -98,7 +98,7 @@ commands:
     steps:
       - run:
           name: Run JS linter
-          command: npm run lint
+          command: npm run lint:js
 
   build-relocatable-libcurl:
     parameters:
@@ -126,7 +126,7 @@ commands:
     steps:
       - run:
           name: Build CMake library
-          command: cmake -S . -B cmake_build && cmake --build cmake_build && ./scripts/make-relocatable-libwormhole.sh
+          command: cmake -S . -B cmake_build && cmake --build cmake_build && scripts/make-relocatable-libwormhole.sh
       - run:
           name: Create relocatable_libwormhole_<< parameters.arch >>.zip
           command: zip -r relocatable_libwormhole_<< parameters.arch >>.zip relocatable_libwormhole_<< parameters.arch >>

@@ -4,4 +4,4 @@ set -o xtrace
 set -o errexit
 set -o nounset
 
-brew install clang-format
+command -v clang-format || brew install clang-format

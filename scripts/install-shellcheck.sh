@@ -4,4 +4,4 @@ set -o xtrace
 set -o errexit
 set -o nounset
 
-brew install shellcheck
+command -v shellcheck || brew install shellcheck

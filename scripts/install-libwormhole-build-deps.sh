@@ -4,4 +4,4 @@ set -o xtrace
 set -o errexit
 set -o nounset
 
-brew install cmake
+command -v cmake || brew install cmake

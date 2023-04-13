@@ -10,16 +10,34 @@
 scripts/install-relocatable-libcurl-build-deps.sh
 ```
 
+#### Lint
+
+```sh
+npm run lint:sh
+```
+
+Or if you prefer using ShellCheck directly:
+
+```sh
+shellcheck scripts/*.sh
+```
+
 #### Build
 
 ```sh
-./scripts/build.sh
+scripts/build.sh
 ```
 
 #### Test
 
 ```sh
-./curl_build/vendor_install/bin/curl --http3 https://postman-echo.com/get
+curl_build/vendor_install/bin/curl --http3 https://quic.aiortc.org
+# Output:
+# ...
+#         <p>
+#             Congratulations, you loaded this page using HTTP/3!
+#         </p>
+# ...
 ```
 
 ### C++ library
@@ -30,22 +48,42 @@ scripts/install-relocatable-libcurl-build-deps.sh
 scripts/install-libwormhole-build-deps.sh
 ```
 
+#### Format
+
+```sh
+npm run cpp:format
+```
+
+Or if you prefer using ClangFormat directly:
+
+```sh
+clang-format --style=file -i src/*.cc test/*.cc binding/*.cc include/*.h
+```
+
 #### Build
 
 ```sh
-npm run cmake:build
+npm run build:cmake
+```
+
+Or if you prefer using CMake directly:
+
+```sh
+cmake -S . -B cmake_build
+cmake --build cmake_build
+scripts/make-relocatable-libwormhole.sh
 ```
 
 #### Test
 
 ```sh
-npm run cmake:test
+npm run test:cmake
 ```
 
-#### Format
+Or if you prefer using CTest directly:
 
 ```sh
-npm run cmake:format
+ctest --test-dir cmake_build
 ```
 
 ### NPM package
@@ -53,7 +91,29 @@ npm run cmake:format
 #### Install dependencies
 
 ```sh
+# We are passing `--ignore-scripts` here, so that the installation doesn't
+# trigger `node-gyp rebuild` to run because that depends on some of the binaries
+# in `curl_build/vendor_install`, which is not available until
+# `scripts/build.js` is run.
+npm ci --ignore-scripts
+```
+
+Or if you don't have Node.js installed:
+
+```sh
 scripts/install-npm-library-build-deps.sh
+```
+
+#### Lint
+
+```sh
+npm run lint:js
+```
+
+#### Format
+
+```sh
+npm run format:js
 ```
 
 #### Build
@@ -68,14 +128,8 @@ npm run build
 npm test
 ```
 
-#### Format
+#### Clean
 
 ```sh
-npm run format
-```
-
-#### Lint
-
-```sh
-npm run lint
+npm run clean
 ```
