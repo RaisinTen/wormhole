@@ -9,6 +9,52 @@ const wormhole = require('..');
 
 describe('Basic HTTP test', async () => {
   let response;
+  let server;
+  let port;
+
+  before(async () => {
+    // HTTP server setup code from the Node.js `http` module documentation.
+    // Refs: https://nodejs.org/api/http.html#httpcreateserveroptions-requestlistener
+    const http = require('node:http');
+
+    server = http.createServer((req, res) => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        data: 'Hello World!',
+      }));
+    });
+
+    await (new Promise((resolve) => {
+      server.listen(0, () => {
+        resolve();
+      });
+    }));
+    ok(server.listening);
+
+    ({ port } = server.address());
+  });
+
+  it('request', async () => {
+    response = await wormhole.request(`http://localhost:${port}`);
+  });
+
+  it('code', () => {
+    strictEqual(response.code, 200);
+  });
+
+  it('body', () => {
+    strictEqual(response.body, JSON.stringify({
+      data: 'Hello World!',
+    }));
+  });
+
+  after(() => {
+    server.close();
+  });
+});
+
+describe('Basic HTTPS test', async () => {
+  let response;
 
   it('request', async () => {
     response = await wormhole.request('https://postman-echo.com/get');
@@ -97,7 +143,7 @@ describe('Basic HTTP3 test', async () => {
 
   it('request', async () => {
     // Found this url in https://bagder.github.io/HTTP3-test/.
-    response = await wormhole.request('https://quic.aiortc.org/');
+    response = await wormhole.request('https://quic.aiortc.org/', { http: 'v3' });
   }).timeout(6_000);
 
   it('code', () => {
@@ -127,7 +173,7 @@ describe('Illegal URL format', async () => {
       await wormhole.request('abc');
     }, {
       name: 'Error',
-      message: 'URL using bad/illegal format or missing URL'
+      message: 'Couldn\'t resolve host name'
     });
   });
 });

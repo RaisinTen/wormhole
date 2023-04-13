@@ -32,10 +32,16 @@ Response request(const std::string_view url, RequestOptions options) {
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
 
-    // CURL_HTTP_VERSION_3: (Added in 7.66.0) This option makes libcurl attempt
-    // to use HTTP/3 to the host given in the URL, with fallback to earlier HTTP
-    // versions if needed.
-    curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_3);
+    switch (options.http_version()) {
+#define V(HTTP_VERSION)                                                        \
+  case HTTPVersion::v##HTTP_VERSION:                                           \
+    curl_easy_setopt(curl, CURLOPT_HTTP_VERSION,                               \
+                     CURL_HTTP_VERSION_##HTTP_VERSION);                        \
+    break;
+
+      WORMHOLE_HTTP_VERSIONS(V)
+#undef V
+    }
 
     switch (options.method()) {
 #define V(HTTP_METHOD)                                                         \

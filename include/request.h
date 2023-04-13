@@ -9,6 +9,22 @@
 
 namespace wormhole {
 
+#define WORMHOLE_HTTP_VERSIONS(V)                                              \
+  V(1_0)                                                                       \
+  V(1_1)                                                                       \
+  V(2_0)                                                                       \
+  V(2TLS)                                                                      \
+  V(2_PRIOR_KNOWLEDGE)                                                         \
+  V(3)                                                                         \
+  V(3ONLY)
+
+enum class HTTPVersion {
+#define V(HTTP_VERSION) v##HTTP_VERSION,
+
+  WORMHOLE_HTTP_VERSIONS(V)
+#undef V
+};
+
 #define WORMHOLE_HTTP_METHODS(V)                                               \
   V(GET)                                                                       \
   V(HEAD)                                                                      \
@@ -25,21 +41,30 @@ class RequestOptionsBuilder;
 
 class RequestOptions {
 public:
+  HTTPVersion http_version() const { return http_version_; }
   Method method() const { return method_; }
   std::optional<std::filesystem::path> ca_bundle() const { return ca_bundle_; }
 
 private:
-  RequestOptions(Method method, std::optional<std::filesystem::path> ca_bundle)
-      : method_{method}, ca_bundle_{std::move(ca_bundle)} {}
+  RequestOptions(HTTPVersion http_version, Method method,
+                 std::optional<std::filesystem::path> ca_bundle)
+      : http_version_{http_version}, method_{method}, ca_bundle_{std::move(
+                                                          ca_bundle)} {}
 
   friend RequestOptionsBuilder;
 
+  HTTPVersion http_version_;
   Method method_;
   std::optional<std::filesystem::path> ca_bundle_;
 };
 
 class RequestOptionsBuilder {
 public:
+  RequestOptionsBuilder &set_http_version(HTTPVersion http_version) {
+    http_version_ = http_version;
+    return *this;
+  }
+
   RequestOptionsBuilder &set_method(Method method) {
     method_ = method;
     return *this;
@@ -51,10 +76,11 @@ public:
   }
 
   RequestOptions build() {
-    return RequestOptions(method_, std::move(ca_bundle_));
+    return RequestOptions(http_version_, method_, std::move(ca_bundle_));
   }
 
 private:
+  HTTPVersion http_version_ = HTTPVersion::v2TLS;
   Method method_ = Method::GET;
   std::optional<std::filesystem::path> ca_bundle_;
 };

@@ -25,7 +25,11 @@ Use the library in your program:
 #include <request.h>
 
 ...
-  wormhole::Response res = wormhole::request("https://quic.aiortc.org/");
+  wormhole::Response res =
+      wormhole::request("https://quic.aiortc.org/",
+                        wormhole::RequestOptionsBuilder()
+                            .set_http_version(wormhole::HTTPVersion::v3ONLY)
+                            .build());
   std::cout << res.body.str() << std::endl;
 ...
 
@@ -88,7 +92,9 @@ Requests can be sent to QUIC endpoints like https://quic.aiortc.org.
 const wormhole = require('@postman/wormhole');
 
 (async () => {
-  const response = await wormhole.request('https://quic.aiortc.org');
+  const response = await wormhole.request('https://quic.aiortc.org', {
+    http: 'v3ONLY'
+  });
   console.log(response);
 })();
 

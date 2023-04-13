@@ -61,6 +61,32 @@ Napi::Value Request(const Napi::CallbackInfo &info) {
 
     Napi::Object options(env, info[1]);
 
+    if (options.Has("http")) {
+      Napi::Value value = options.Get("http");
+      if (!value.IsString()) {
+        Napi::TypeError::New(env, "The http version needs to be a string.")
+            .ThrowAsJavaScriptException();
+        return {};
+      }
+
+      std::string http_version_string(Napi::String(env, value));
+
+      if (false) {
+#define V(HTTP_VERSION)                                                        \
+  }                                                                            \
+  else if (http_version_string == "v" #HTTP_VERSION) {                         \
+    request_options_builder.set_http_version(                                  \
+        wormhole::HTTPVersion::v##HTTP_VERSION);
+
+        WORMHOLE_HTTP_VERSIONS(V)
+#undef V
+      } else {
+        Napi::TypeError::New(env, "Invalid http version string.")
+            .ThrowAsJavaScriptException();
+        return {};
+      }
+    }
+
     if (options.Has("method")) {
       Napi::Value value = options.Get("method");
       if (!value.IsString()) {

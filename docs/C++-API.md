@@ -1,10 +1,29 @@
 # C++ API
 
+## `HTTPVersion` enum
+
+The supported HTTP verions. Possible values:
+
+* `HTTPVersion::v1_0` - Enforce HTTP 1.0 requests.
+* `HTTPVersion::v1_1` - Enforce HTTP 1.1 requests.
+* `HTTPVersion::v2_0` - Attempt HTTP 2 requests. It will fall back to HTTP 1.1
+  if HTTP 2 cannot be negotiated with the server.
+* `HTTPVersion::v2TLS` (default) - Attempt HTTP 2 over TLS (HTTPS) only. It will fall back
+  to HTTP 1.1 if HTTP 2 cannot be negotiated with the HTTPS server.
+* `HTTPVersion::v2_PRIOR_KNOWLEDGE` - Issue non-TLS HTTP requests using HTTP/2
+  without HTTP/1.1 Upgrade. It requires prior knowledge that the server supports
+  HTTP/2 straight away. HTTPS requests will still do HTTP/2 the standard way
+  with negotiated protocol version in the TLS handshake.
+* `HTTPVersion::v3` - Attempt HTTP/3 requests. It will fall back to earlier HTTP
+  versions if needed.
+* `HTTPVersion::v3ONLY` - Attempt HTTP/3 only. It will not fall back to earlier
+  HTTP version if the server does not support HTTP/3.
+
 ## `Method` enum
 
 The supported method types. Possible values:
 
-* `Method::GET`
+* `Method::GET` (default)
 * `Method::HEAD`
 * `Method::POST`
 * `Method::PUT`
