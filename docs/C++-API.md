@@ -94,6 +94,10 @@ The response body.
 
 The HTTP status code.
 
+### `std::map<std::string, std::string> headers;` member variable
+
+The response headers.
+
 ### `std::optional<std::string> error` member variable
 
 This optionally contains a string in case an error happened while sending the
@@ -125,6 +129,11 @@ int main() {
     std::cerr << "Error: " << res.error.value() << std::endl;
   } else {
     std::cout << "Response: " << res.body.str() << std::endl;
+    std::cout << "Headers: {" << std::endl;
+    for (const auto& [key, val] : res.headers) {
+      std::cout << "  \"" << key << "\": \"" << val << "\"" << std::endl;
+    }
+    std::cout << "}" << std::endl;
   }
 
   return 0;
@@ -140,7 +149,7 @@ int main() {
 //     "x-forwarded-proto": "https",
 //     "x-forwarded-port": "443",
 //     "host": "postman-echo.com",
-//     "x-amzn-trace-id": "Root=1-643816d2-7cb6d06146a5d8456dbb9247",
+//     "x-amzn-trace-id": "Root=1-6438247a-6e68572f33190e720069d948",
 //     "accept": "*/*",
 //     "a": "b",
 //     "hello": "world",
@@ -149,5 +158,12 @@ int main() {
 //   },
 //   "json": null,
 //   "url": "https://postman-echo.com/post"
+// }
+// Headers: {
+//   "content-length": "411"
+//   "content-type": "application/json; charset=utf-8"
+//   "date": "Thu, 13 Apr 2023 15:49:14 GMT"
+//   "etag": "W/"19b-XbigrNzszkG804lfksew/+xvBp8""
+//   "set-cookie": "sails.sid=s%3A52aV8Pdb9mv66cs8LeG6LqbQ3-fiEgt7.RCmkj5mLpIp3Io5k9YKBu2r1MDPiATjdTindECZyyBM; Path=/; HttpOnly"
 // }
 ```

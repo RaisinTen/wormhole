@@ -100,6 +100,7 @@ private:
 struct Response {
   std::ostringstream body;
   long code;
+  std::map<std::string, std::string> headers;
   std::optional<std::string> error;
 };
 

@@ -25,6 +25,13 @@ public:
     Napi::Object response_object = Napi::Object::New(Env());
     response_object.Set("body", response_->body.str());
     response_object.Set("code", response_->code);
+
+    Napi::Object headers = Napi::Object::New(Env());
+    for (auto const &[key, val] : response_->headers) {
+      headers.Set(key, val);
+    }
+    response_object.Set("headers", headers);
+
     deferred_.Resolve(response_object);
   }
 

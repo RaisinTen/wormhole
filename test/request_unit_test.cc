@@ -10,6 +10,7 @@ TEST(http, https_basic) {
   ASSERT_EQ(res.code, 200);
   ASSERT_NE(res.body.str().find(R"("url": "https://postman-echo.com/get")"),
             std::string::npos);
+  ASSERT_GE(std::stoi(res.headers["content-length"]), 250);
 }
 
 TEST(http, http3_basic) {

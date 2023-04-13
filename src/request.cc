@@ -72,6 +72,17 @@ Response request(const std::string_view url, RequestOptions options) {
       curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &data.code);
     }
 
+    curl_header *current_header;
+    curl_header *previous_header = nullptr;
+    do {
+      current_header =
+          curl_easy_nextheader(curl, CURLH_HEADER, -1, previous_header);
+      if (current_header) {
+        data.headers[current_header->name] = current_header->value;
+      }
+      previous_header = current_header;
+    } while (current_header);
+
     curl_easy_cleanup(curl);
 
     curl_slist_free_all(request_headers_chunk);

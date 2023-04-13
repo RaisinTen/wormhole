@@ -16,6 +16,9 @@
 * Returns: `Promise<Object>` The response object.
   * `body`: `<string>` The response body.
   * `code`: `<number>` The response status code.
+  * `code`: `<number>` The response status code.
+  * `headers`: `<Object>` The response headers object with string keys and
+    string values.
 
 The `request()` API sends an HTTP request and returns the response.
 
@@ -45,7 +48,7 @@ const wormhole = require('@postman/wormhole');
 //     '    "x-forwarded-proto": "https",\n' +
 //     '    "x-forwarded-port": "443",\n' +
 //     '    "host": "postman-echo.com",\n' +
-//     '    "x-amzn-trace-id": "Root=1-64381814-3b26c28041651f221f724cc2",\n' +
+//     '    "x-amzn-trace-id": "Root=1-643824d9-1ae0722129d51d5e4914a23d",\n' +
 //     '    "accept": "*/*",\n' +
 //     '    "a": "b",\n' +
 //     '    "hello": "world",\n' +
@@ -55,6 +58,13 @@ const wormhole = require('@postman/wormhole');
 //     '  "json": null,\n' +
 //     '  "url": "https://postman-echo.com/post"\n' +
 //     '}',
-//   code: 200
+//   code: 200,
+//   headers: {
+//     'content-length': '411',
+//     'content-type': 'application/json; charset=utf-8',
+//     date: 'Thu, 13 Apr 2023 15:50:49 GMT',
+//     etag: 'W/"19b-Xn5yLV12T6rdJQsbelXWjnl+xkg"',
+//     'set-cookie': 'sails.sid=s%3AKRJtFWPvKMurL0xgG5rJr3cGUo_U7NZT.ItROs47R2FQ7kGQbRtK1hXN7AkOoWOsdoZcPsChLxZA; Path=/; HttpOnly'
+//   }
 // }
 ```

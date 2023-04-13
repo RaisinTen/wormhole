@@ -48,6 +48,13 @@ describe('Basic HTTP test', async () => {
     }));
   });
 
+  it('headers', () => {
+    strictEqual(response.headers['Connection'], 'keep-alive');
+    strictEqual(response.headers['Content-Type'], 'application/json');
+    strictEqual(response.headers['Keep-Alive'], 'timeout=5');
+    strictEqual(response.headers['Transfer-Encoding'], 'chunked');
+  });
+
   after(() => {
     server.close();
   });

@@ -65,12 +65,19 @@ await wormhole.request('https://postman-echo.com/get');
 //     '    "x-forwarded-proto": "https",\n' +
 //     '    "x-forwarded-port": "443",\n' +
 //     '    "host": "postman-echo.com",\n' +
-//     '    "x-amzn-trace-id": "Root=1-64351173-097ce76b03cb782e1576ba51",\n' +
+//     '    "x-amzn-trace-id": "Root=1-6438234d-250ea6600158d4327b34959d",\n' +
 //     '    "accept": "*/*"\n' +
 //     '  },\n' +
 //     '  "url": "https://postman-echo.com/get"\n' +
 //     '}',
-//   code: 200
+//   code: 200,
+//   headers: {
+//     'content-length': '261',
+//     'content-type': 'application/json; charset=utf-8',
+//     date: 'Thu, 13 Apr 2023 15:44:13 GMT',
+//     etag: 'W/"105-OKIvRBN7dFw60TIXeTUkRZ806Jg"',
+//     'set-cookie': 'sails.sid=s%3AKUokDmAh5iy3387VhsanT2xmvi5OBSxe.0brItKRppniSDZ5E7tsP4KQAKKbO4iDUE5uxKk1pUZw; Path=/; HttpOnly'
+//   }
 // }
 ```
 
@@ -122,7 +129,14 @@ const wormhole = require('@postman/wormhole');
 })();
 
 // Output:
-// { body: '<h1>Hello World</h1>', code: 200 }
+// {
+//   body: '<h1>Hello World</h1>',
+//   code: 200,
+//   headers: {
+//     'content-type': 'text/html; charset=utf-8',
+//     date: 'Thu, 13 Apr 2023 15:45:40 GMT'
+//   }
+// }
 ```
 
 ### OpenSSL as the backend for cryptography
