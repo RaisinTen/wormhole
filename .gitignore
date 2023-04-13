@@ -13,7 +13,8 @@ build
 node_modules
 cmake_build
 curl_build
-relocatable_libcurl
+relocatable_libcurl_arm64/
+relocatable_libcurl_x86_64/
 relocatable_libwormhole_arm64
 relocatable_libwormhole_x86_64
 package/

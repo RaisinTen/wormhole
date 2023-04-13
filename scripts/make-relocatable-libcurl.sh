@@ -12,13 +12,15 @@ set -o nounset
 # paths with the `@loader_path` symbol, which is the path of the directory that
 # contains the library, by using the `install_name_tool` tool. The install name
 # of the entrypoint library is also changed into a path relative to the `@rpath`
-# path. The assumed `@rpath` here is the `relocatable_libcurl` directory.
+# path. The assumed `@rpath` here is the `relocatable_libcurl_<arch>` directory.
 
 cd "$PROJECT_ROOT"
 
-rm -rf relocatable_libcurl
-mkdir relocatable_libcurl
-cd relocatable_libcurl
+RELOCATABLE_LIBCURL_DIR="relocatable_libcurl_$(uname -m)"
+
+rm -rf "$RELOCATABLE_LIBCURL_DIR"
+mkdir "$RELOCATABLE_LIBCURL_DIR"
+cd "$RELOCATABLE_LIBCURL_DIR"
 
 # Copy the includes directory.
 mkdir include
@@ -61,13 +63,13 @@ cp "$SYSTEM_LIB_PREFIX/brotli/lib/libbrotlicommon.dylib" .
 
 # Set the identification name of the entrypoint dylib - libcurl.
 # So here, the requirement is that whatever dylib / executable that attempts to
-# load this should have an rpath pointing to the `relocatable_libcurl`
+# load this should have an rpath pointing to the `relocatable_libcurl_<arch>`
 # directory.
 install_name_tool -id "@rpath/lib/libcurl.dylib" "libcurl.dylib"
 
 # Set the identification names of the dylibs. This step is totally optional
 # because these libraries are currently only loaded by libraries in the
-# `relocatable_libcurl/lib` directory and not from any client application which
+# `relocatable_libcurl_<arch>/lib` directory and not from any client application which
 # would load these indirectly through an rpath. This is being because of
 # stylistic reasons so that `otool -l` on these libraries don't contain the
 # original paths of these libraries which is only sensible on the host system

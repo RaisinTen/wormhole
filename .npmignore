@@ -13,7 +13,8 @@ package_tests/
 scripts/
 test/
 vendor/
-relocatable_libcurl/
+relocatable_libcurl_arm64/
+relocatable_libcurl_x86_64/
 package/
 include/
 src/

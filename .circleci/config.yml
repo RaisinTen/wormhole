@@ -101,18 +101,22 @@ commands:
           command: npm run lint
 
   build-relocatable-libcurl:
+    parameters:
+      arch:
+        type: enum
+        enum: [ x86_64, arm64 ]
     steps:
       - run:
-          name: Build relocatable libcurl
+          name: Build relocatable libcurl for << parameters.arch >>
           command: scripts/build.sh
       - run:
-          name: Create relocatable_libcurl.zip
-          command: zip -r relocatable_libcurl.zip relocatable_libcurl
+          name: Create relocatable_libcurl_<< parameters.arch >>.zip
+          command: zip -r relocatable_libcurl_<< parameters.arch >>.zip relocatable_libcurl_<< parameters.arch >>
       - store_artifacts:
-          path: relocatable_libcurl.zip
+          path: relocatable_libcurl_<< parameters.arch >>.zip
       - run:
-          name: Delete relocatable_libcurl.zip
-          command: rm relocatable_libcurl.zip
+          name: Delete relocatable_libcurl_<< parameters.arch >>.zip
+          command: rm relocatable_libcurl_<< parameters.arch >>.zip
 
   build-cmake-library:
     parameters:
@@ -184,12 +188,13 @@ jobs:
     steps:
       - checkout
       - install-relocatable-libcurl-build-deps
-      - build-relocatable-libcurl
+      - build-relocatable-libcurl:
+          arch: << parameters.arch >>
       - test-curl-build
       - persist_to_workspace:
           root: .
           paths:
-            - relocatable_libcurl
+            - relocatable_libcurl_<< parameters.arch >>
 
   build-and-test-cmake-library:
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
@@ -303,8 +308,19 @@ jobs:
       - install-npm-library-build-deps
       - build-npm-library
       - test-npm-library
+
+  deploy:
+    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
+    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+    executor: macos-x86_64
+
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
       - run:
           command: mkdir -p package && npm pack --pack-destination package
+        # TODO(RaisinTen): Deploy this package to npm.
       - store_artifacts:
           path: package
 
@@ -335,3 +351,7 @@ workflows:
               arch: [x86_64, arm64]
           requires:
             - build-and-test-cmake-library-<< matrix.arch >>
+      - deploy:
+          requires:
+            - build-and-test-npm-library-x86_64
+            - build-and-test-npm-library-arm64
