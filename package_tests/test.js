@@ -240,3 +240,24 @@ describe('Basic GBK encoding test', async () => {
     ok(/<title>69/.test(response.body));
   });
 });
+
+describe('Racing requests', async () => {
+  let response;
+
+  it('request', async () => {
+    response = await Promise.race([
+      wormhole.request("https://nghttp2.org/httpbin/delay/5"),
+      wormhole.request("https://nghttp2.org/httpbin/delay/1"),
+    ]);
+  }).timeout(6_000);
+
+  it('code', () => {
+    strictEqual(response.code, 200);
+  });
+
+  const responseJSON = JSON.parse(response.body);
+
+  it('url', () => {
+    strictEqual(responseJSON.url, "https://nghttp2.org/httpbin/delay/1");
+  });
+});
