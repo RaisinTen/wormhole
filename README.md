@@ -75,6 +75,52 @@ Check out the [JS API documentation](docs/JS-API.md).
 
 ## Major features
 
-* HTTP/3 (QUIC protocol) support
-* HTTP/2 support
-* OpenSSL as the backend for cryptography
+### No additional system depencencies
+
+The wormhole project uses libcurl in the networking layer. However, it doesn't
+require libcurl to be installed on the end user's system for use because
+wormhole ships with a standalone, relocatable build of libcurl.
+
+### HTTP/3 (QUIC protocol) support
+
+Requests can be sent to QUIC endpoints like https://quic.aiortc.org.
+
+```js
+const wormhole = require('@postman/wormhole');
+
+(async () => {
+  const response = await wormhole.request('https://quic.aiortc.org');
+  console.log(response);
+})();
+
+// Output:
+// ...
+// <p>
+//   Congratulations, you loaded this page using HTTP/3!
+// </p>
+// ...
+```
+
+### HTTP/2 support
+
+The HTTP/2 protocol is supported. To verify, set up the HTTP/2-only server
+documented in https://nodejs.org/api/http2.html#server-side-example and run:
+
+```js
+const wormhole = require('@postman/wormhole');
+
+(async () => {
+  const response = await wormhole.request('https://localhost:8443', {
+    ca: 'localhost-cert.pem'
+  });
+  console.log(response);
+})();
+
+// Output:
+// { body: '<h1>Hello World</h1>', code: 200 }
+```
+
+### OpenSSL as the backend for cryptography
+
+The wormhole project uses the quictls fork of OpenSSL -
+https://github.com/quictls/openssl for SSL.
