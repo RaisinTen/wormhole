@@ -2,6 +2,7 @@
 #define WORMHOLE_REQUEST_H_
 
 #include <filesystem>
+#include <map>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -43,18 +44,21 @@ class RequestOptions {
 public:
   HTTPVersion http_version() const { return http_version_; }
   Method method() const { return method_; }
+  const std::map<std::string, std::string> &headers() const { return headers_; }
   std::optional<std::filesystem::path> ca_bundle() const { return ca_bundle_; }
 
 private:
   RequestOptions(HTTPVersion http_version, Method method,
+                 std::map<std::string, std::string> headers,
                  std::optional<std::filesystem::path> ca_bundle)
-      : http_version_{http_version}, method_{method}, ca_bundle_{std::move(
-                                                          ca_bundle)} {}
+      : http_version_{http_version}, method_{method},
+        headers_{std::move(headers)}, ca_bundle_{std::move(ca_bundle)} {}
 
   friend RequestOptionsBuilder;
 
   HTTPVersion http_version_;
   Method method_;
+  std::map<std::string, std::string> headers_;
   std::optional<std::filesystem::path> ca_bundle_;
 };
 
@@ -70,18 +74,26 @@ public:
     return *this;
   }
 
+  RequestOptionsBuilder &
+  set_headers(std::map<std::string, std::string> headers) {
+    headers_ = std::move(headers);
+    return *this;
+  }
+
   RequestOptionsBuilder &set_ca_bundle(std::filesystem::path ca_bundle) {
     ca_bundle_ = std::move(ca_bundle);
     return *this;
   }
 
   RequestOptions build() {
-    return RequestOptions(http_version_, method_, std::move(ca_bundle_));
+    return RequestOptions(http_version_, method_, std::move(headers_),
+                          std::move(ca_bundle_));
   }
 
 private:
   HTTPVersion http_version_ = HTTPVersion::v2TLS;
   Method method_ = Method::GET;
+  std::map<std::string, std::string> headers_;
   std::optional<std::filesystem::path> ca_bundle_;
 };
 

@@ -10,6 +10,8 @@
   * `method`: `<string>` The request method. It can be one of `'GET'`, `'HEAD'`,
     `'POST'`, `'PUT'`, `'DELETE'`, `'CONNECT'`, `'OPTIONS'`, `'TRACE'` and
     `'PATCH'`. **Default:** `GET`.
+  * `headers`: `<Object>` The request headers object with string keys and string
+    values. **Default:** `{}`.
   * `ca`: `<string>` The certificate authority bundle file path.
 * Returns: `Promise<Object>` The response object.
   * `body`: `<string>` The response body.
@@ -22,7 +24,12 @@ const wormhole = require('@postman/wormhole');
 
 (async () => {
   const response = await wormhole.request('https://postman-echo.com/post', {
-    method: 'POST'
+    method: 'POST',
+    headers: {
+      hello: 'world',
+      a: 'b',
+      x: 'y',
+    },
   });
   console.log(response);
 })();
@@ -38,8 +45,11 @@ const wormhole = require('@postman/wormhole');
 //     '    "x-forwarded-proto": "https",\n' +
 //     '    "x-forwarded-port": "443",\n' +
 //     '    "host": "postman-echo.com",\n' +
-//     '    "x-amzn-trace-id": "Root=1-6436bfdd-272e6cee5c1499570495f557",\n' +
+//     '    "x-amzn-trace-id": "Root=1-64381814-3b26c28041651f221f724cc2",\n' +
 //     '    "accept": "*/*",\n' +
+//     '    "a": "b",\n' +
+//     '    "hello": "world",\n' +
+//     '    "x": "y",\n' +
 //     '    "content-type": "application/json"\n' +
 //     '  },\n' +
 //     '  "json": null,\n' +

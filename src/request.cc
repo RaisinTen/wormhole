@@ -53,6 +53,13 @@ Response request(const std::string_view url, RequestOptions options) {
 #undef V
     }
 
+    curl_slist *request_headers_chunk = NULL;
+    for (const auto &[key, value] : options.headers()) {
+      request_headers_chunk = curl_slist_append(request_headers_chunk,
+                                                (key + ": " + value).c_str());
+    }
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers_chunk);
+
     if (options.ca_bundle().has_value()) {
       curl_easy_setopt(curl, CURLOPT_CAINFO,
                        options.ca_bundle().value().c_str());
@@ -66,6 +73,8 @@ Response request(const std::string_view url, RequestOptions options) {
     }
 
     curl_easy_cleanup(curl);
+
+    curl_slist_free_all(request_headers_chunk);
   }
   return data;
 }

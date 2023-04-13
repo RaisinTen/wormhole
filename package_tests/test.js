@@ -57,7 +57,13 @@ describe('Basic HTTPS test', async () => {
   let response;
 
   it('request', async () => {
-    response = await wormhole.request('https://postman-echo.com/get');
+    response = await wormhole.request('https://postman-echo.com/get', {
+      headers: {
+        hello: 'world',
+        a: 'b',
+        x: 'y',
+      }
+    });
   }).timeout(6_000);
 
   it('code', () => {
@@ -68,6 +74,9 @@ describe('Basic HTTPS test', async () => {
 
   it('headers', () => {
     strictEqual(typeof responseJSON.headers, 'object');
+    strictEqual(responseJSON.headers.hello, 'world');
+    strictEqual(responseJSON.headers.a, 'b');
+    strictEqual(responseJSON.headers.x, 'y');
   });
 
   it('args', () => {

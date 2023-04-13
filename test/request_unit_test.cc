@@ -41,13 +41,19 @@ TEST(http, illegal_url_format) {
 
 TEST(http, post_request) {
   wormhole::Response res = wormhole::request(
-      "https://postman-echo.com/post", wormhole::RequestOptionsBuilder()
-                                           .set_method(wormhole::Method::POST)
-                                           .build());
+      "https://postman-echo.com/post",
+      wormhole::RequestOptionsBuilder()
+          .set_method(wormhole::Method::POST)
+          .set_headers({{"hello", "world"}, {"a", "b"}, {"x", "y"}})
+          .build());
+
   ASSERT_EQ(res.error.has_value(), false);
   ASSERT_EQ(res.code, 200);
   ASSERT_NE(res.body.str().find(R"("url": "https://postman-echo.com/post")"),
             std::string::npos);
+  ASSERT_NE(res.body.str().find(R"("hello": "world")"), std::string::npos);
+  ASSERT_NE(res.body.str().find(R"("a": "b")"), std::string::npos);
+  ASSERT_NE(res.body.str().find(R"("x": "y")"), std::string::npos);
 }
 
 TEST(http, gbk_encoding) {

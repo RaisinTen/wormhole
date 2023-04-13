@@ -112,6 +112,41 @@ Napi::Value Request(const Napi::CallbackInfo &info) {
       }
     }
 
+    if (options.Has("headers")) {
+      Napi::Value value = options.Get("headers");
+      if (!value.IsObject()) {
+        Napi::TypeError::New(env, "The headers needs to be an object.")
+            .ThrowAsJavaScriptException();
+        return {};
+      }
+
+      Napi::Object headers_value(env, value);
+      Napi::Array header_names = headers_value.GetPropertyNames();
+
+      std::map<std::string, std::string> headers;
+      for (uint32_t i = 0; i < header_names.Length(); ++i) {
+        Napi::Value key = header_names.Get(i);
+
+        if (!key.IsString()) {
+          Napi::TypeError::New(env, "The header key need to be strings.")
+              .ThrowAsJavaScriptException();
+          return {};
+        }
+
+        Napi::Value val = headers_value.Get(key);
+
+        if (!val.IsString()) {
+          Napi::TypeError::New(env, "The header values need to be strings.")
+              .ThrowAsJavaScriptException();
+          return {};
+        }
+
+        headers[Napi::String(env, key)] = Napi::String(env, val);
+      }
+
+      request_options_builder.set_headers(std::move(headers));
+    }
+
     if (options.Has("ca")) {
       Napi::Value value = options.Get("ca");
       if (!value.IsString()) {

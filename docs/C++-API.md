@@ -42,6 +42,10 @@ instance can be created.
 
 Setter for the method.
 
+### `RequestOptionsBuilder &set_headers(std::map<std::string, std::string> headers)` method
+
+Setter for the headers.
+
 ### `RequestOptionsBuilder &set_ca_bundle(std::filesystem::path ca_bundle)` method
 
 Setter for the CA bundle path.
@@ -59,6 +63,10 @@ constructed by the `RequestOptionsBuilder` class.
 ### `Method method() const` method
 
 The getter for the method type.
+
+### `Method method() const` method
+
+The getter for the headers.
 
 ### `std::optional<std::filesystem::path> ca_bundle() const` method
 
@@ -109,7 +117,10 @@ using namespace wormhole;
 int main() {
   Response res = wormhole::request(
       "https://postman-echo.com/post",
-      RequestOptionsBuilder().set_method(Method::POST).build());
+      RequestOptionsBuilder()
+          .set_method(Method::POST)
+          .set_headers({{"hello", "world"}, {"a", "b"}, {"x", "y"}})
+          .build());
   if (res.error.has_value()) {
     std::cerr << "Error: " << res.error.value() << std::endl;
   } else {
@@ -129,8 +140,11 @@ int main() {
 //     "x-forwarded-proto": "https",
 //     "x-forwarded-port": "443",
 //     "host": "postman-echo.com",
-//     "x-amzn-trace-id": "Root=1-6436becc-5b64b8d43621de60770c4691",
+//     "x-amzn-trace-id": "Root=1-643816d2-7cb6d06146a5d8456dbb9247",
 //     "accept": "*/*",
+//     "a": "b",
+//     "hello": "world",
+//     "x": "y",
 //     "content-type": "application/json"
 //   },
 //   "json": null,
