@@ -49,3 +49,16 @@ TEST(http, post_request) {
   ASSERT_NE(res.body.str().find(R"("url": "https://postman-echo.com/post")"),
             std::string::npos);
 }
+
+TEST(http, gbk_encoding) {
+  // Third most popular website from
+  // https://w3techs.com/technologies/details/en-gbk.
+  wormhole::Response res = wormhole::request("https://www.69shu.com");
+  ASSERT_EQ(res.error.has_value(), false);
+  ASSERT_EQ(res.code, 200);
+  // TODO(RaisinTen): Test the entire title string:
+  // `<title>69书吧_更新最快_无弹窗广告_无错小说阅读网</title>`.
+  // Currently, encoding isn't handled correctly but at least this doesn't
+  // crash or throw.
+  ASSERT_NE(res.body.str().find("<title>69"), std::string::npos);
+}

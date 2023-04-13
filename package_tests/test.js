@@ -203,3 +203,24 @@ describe('POST request', async () => {
     strictEqual(responseJSON.url, 'https://postman-echo.com/post');
   });
 });
+
+describe('Basic GBK encoding test', async () => {
+  let response;
+
+  it('request', async () => {
+    // Third most popular website from https://w3techs.com/technologies/details/en-gbk.
+    response = await wormhole.request('https://www.69shu.com');
+  }).timeout(6_000);
+
+  it('code', () => {
+    strictEqual(response.code, 200);
+  });
+
+  it('body', () => {
+    // TODO(RaisinTen): Test the entire title string:
+    // `<title>69书吧_更新最快_无弹窗广告_无错小说阅读网</title>`.
+    // Currently, encoding isn't handled correctly but at least this doesn't
+    // crash or throw.
+    ok(/<title>69/.test(response.body));
+  });
+});
