@@ -26,8 +26,7 @@ Use the library in your program:
 
 ...
   wormhole::Response res = wormhole::request("https://quic.aiortc.org/");
-  std::string response_string(res.data, res.size);
-  std::cout << response_string << std::endl;
+  std::cout << res.body.str() << std::endl;
 ...
 
 // Output:

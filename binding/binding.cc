@@ -23,8 +23,7 @@ public:
 
   void OnOK() {
     Napi::Object response_object = Napi::Object::New(Env());
-    std::string response_string(response_->data, response_->size);
-    response_object.Set("body", response_string);
+    response_object.Set("body", response_->body.str());
     response_object.Set("code", response_->code);
     deferred_.Resolve(response_object);
   }

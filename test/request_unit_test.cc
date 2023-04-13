@@ -8,8 +8,7 @@ TEST(http, http_basic) {
   wormhole::Response res = wormhole::request("https://postman-echo.com/get");
   ASSERT_EQ(res.error.has_value(), false);
   ASSERT_EQ(res.code, 200);
-  std::string response_string(res.data, res.size);
-  ASSERT_NE(response_string.find(R"("url": "https://postman-echo.com/get")"),
+  ASSERT_NE(res.body.str().find(R"("url": "https://postman-echo.com/get")"),
             std::string::npos);
 }
 
@@ -18,10 +17,9 @@ TEST(http, http_quic) {
   wormhole::Response res = wormhole::request("https://quic.aiortc.org/");
   ASSERT_EQ(res.error.has_value(), false);
   ASSERT_EQ(res.code, 200);
-  std::string response_string(res.data, res.size);
-  ASSERT_NE(response_string.find(
-                "Congratulations, you loaded this page using HTTP/3"),
-            std::string::npos);
+  ASSERT_NE(
+      res.body.str().find("Congratulations, you loaded this page using HTTP/3"),
+      std::string::npos);
 }
 
 TEST(http, http_404_not_found) {
@@ -44,7 +42,6 @@ TEST(http, post_request) {
                                            .build());
   ASSERT_EQ(res.error.has_value(), false);
   ASSERT_EQ(res.code, 200);
-  std::string response_string(res.data, res.size);
-  ASSERT_NE(response_string.find(R"("url": "https://postman-echo.com/post")"),
+  ASSERT_NE(res.body.str().find(R"("url": "https://postman-echo.com/post")"),
             std::string::npos);
 }

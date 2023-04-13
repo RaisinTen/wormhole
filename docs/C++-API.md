@@ -59,13 +59,9 @@ RequestOptionsBuilder()
 
 This is the type of the object that is returned by the `request()` function.
 
-### `char *data` member variable
+### `std::ostringstream body` member variable
 
-The pointer to the buffer that contains the body.
-
-### `size_t size` member variable
-
-The size of the body.
+The response body.
 
 ### `long code` member variable
 
@@ -98,8 +94,7 @@ int main() {
   if (res.error.has_value()) {
     std::cerr << "Error: " << res.error.value() << std::endl;
   } else {
-    std::string response_string(res.data, res.size);
-    std::cout << "Response: " << response_string << std::endl;
+    std::cout << "Response: " << res.body.str() << std::endl;
   }
 
   return 0;

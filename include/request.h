@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <string_view>
 
@@ -59,8 +60,7 @@ private:
 };
 
 struct Response {
-  char *data;
-  size_t size;
+  std::ostringstream body;
   long code;
   std::optional<std::string> error;
 };
