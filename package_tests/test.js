@@ -261,3 +261,14 @@ describe('Racing requests', async () => {
     strictEqual(responseJSON.url, "https://nghttp2.org/httpbin/delay/1");
   });
 });
+
+describe('Invalid CA bundle', async () => {
+  it('request', async () => {
+    await rejects(async () => {
+      await wormhole.request('https://postman-echo.com/get', { ca: '/a/b/c' });
+    }, {
+      name: 'Error',
+      message: 'Invalid CA bundle.'
+    });
+  });
+});

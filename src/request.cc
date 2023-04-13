@@ -61,8 +61,13 @@ Response request(const std::string_view url, RequestOptions options) {
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers_chunk);
 
     if (options.ca_bundle().has_value()) {
-      curl_easy_setopt(curl, CURLOPT_CAINFO,
-                       options.ca_bundle().value().c_str());
+      std::filesystem::path ca_path{options.ca_bundle().value()};
+      std::error_code error_code;
+      if (!std::filesystem::exists(ca_path, error_code)) {
+        data.error = "Invalid CA bundle.";
+        return data;
+      }
+      curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path.c_str());
     }
 
     res = curl_easy_perform(curl);

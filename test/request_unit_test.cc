@@ -69,3 +69,10 @@ TEST(http, gbk_encoding) {
   // crash or throw.
   ASSERT_NE(res.body.str().find("<title>69"), std::string::npos);
 }
+
+TEST(http, invalid_ca_bundle) {
+  wormhole::Response res = wormhole::request(
+      "https://postman-echo.com/post",
+      wormhole::RequestOptionsBuilder().set_ca_bundle("/a/b/c").build());
+  ASSERT_EQ(res.error, "Invalid CA bundle.");
+}
