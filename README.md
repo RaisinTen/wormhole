@@ -4,45 +4,6 @@ A custom networking layer for Postman.
 
 ## Use
 
-### C++ library
-
-Compile with the wormhole shared library present in `relocatable_libwormhole_<arch>`
-(`arch` is `x86_64` or `arm64`):
-
-```sh
-clang++ \
-  -std=c++17 \
-  <entry/point.cc> \
-  -I<path/to/relocatable_libwormhole_<arch>/include> \
-  -L<path/to/relocatable_libwormhole_<arch>/lib> \
-  -lwormhole \
-  -rpath @executable_path/<relative/path/to/relocatable_libwormhole_<arch>>
-```
-
-Use the library in your program:
-
-```cc
-#include <request.h>
-
-...
-  wormhole::Response res =
-      wormhole::request("https://quic.aiortc.org/",
-                        wormhole::RequestOptionsBuilder()
-                            .set_http_version(wormhole::HTTPVersion::v3ONLY)
-                            .build());
-  std::cout << res.body << std::endl;
-...
-
-// Output:
-// ...
-// <p>
-//   Congratulations, you loaded this page using HTTP/3!
-// </p>
-// ...
-```
-
-Check out the [C++ API documentation](docs/C++-API.md).
-
 ### NPM package
 
 Download the package:
@@ -82,6 +43,45 @@ await wormhole.request('https://postman-echo.com/get');
 ```
 
 Check out the [JS API documentation](docs/JS-API.md).
+
+### C++ library
+
+Compile with the wormhole shared library present in `relocatable_libwormhole_<arch>`
+(`arch` is `x86_64` or `arm64`):
+
+```sh
+clang++ \
+  -std=c++17 \
+  <entry/point.cc> \
+  -I<path/to/relocatable_libwormhole_<arch>/include> \
+  -L<path/to/relocatable_libwormhole_<arch>/lib> \
+  -lwormhole \
+  -rpath @executable_path/<relative/path/to/relocatable_libwormhole_<arch>>
+```
+
+Use the library in your program:
+
+```cc
+#include <request.h>
+
+...
+  wormhole::Response res =
+      wormhole::request("https://quic.aiortc.org/",
+                        wormhole::RequestOptionsBuilder()
+                            .set_http_version(wormhole::HTTPVersion::v3ONLY)
+                            .build());
+  std::cout << res.body << std::endl;
+...
+
+// Output:
+// ...
+// <p>
+//   Congratulations, you loaded this page using HTTP/3!
+// </p>
+// ...
+```
+
+Check out the [C++ API documentation](docs/C++-API.md).
 
 ## Major features
 
