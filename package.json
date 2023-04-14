@@ -1,6 +1,6 @@
 {
   "name": "@postman/wormhole",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "description": "A custom network layer for Postman.",
   "main": "index.js",
   "directories": {
@@ -10,16 +10,13 @@
     "build": "node-gyp rebuild",
     "clean": "node-gyp clean",
     "test": "mocha package_tests",
-
     "lint": "npm run lint:sh && npm run lint:cpp && npm run lint:js",
     "lint:js": "eslint index.js package_tests",
     "lint:sh": "shellcheck scripts/*.sh",
     "lint:cpp": "clang-format --style=file --dry-run -Werror -i src/*.cc test/*.cc binding/*.cc include/*.h",
-
     "format": "npm run format:cpp && npm run format:js",
     "format:js": "eslint --fix index.js package_tests",
     "format:cpp": "clang-format --style=file -i src/*.cc test/*.cc binding/*.cc include/*.h",
-
     "build:cmake": "cmake -S . -B cmake_build && cmake --build cmake_build && scripts/make-relocatable-libwormhole.sh",
     "test:cmake": "ctest --test-dir cmake_build"
   },
