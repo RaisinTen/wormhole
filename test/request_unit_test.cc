@@ -8,7 +8,7 @@ TEST(http, https_basic) {
   wormhole::Response res = wormhole::request("https://postman-echo.com/get");
   ASSERT_EQ(res.error.has_value(), false);
   ASSERT_EQ(res.code, 200);
-  ASSERT_NE(res.body.str().find(R"("url": "https://postman-echo.com/get")"),
+  ASSERT_NE(res.body.find(R"("url": "https://postman-echo.com/get")"),
             std::string::npos);
   ASSERT_GE(std::stoi(res.headers["content-length"]), 250);
 }
@@ -22,9 +22,8 @@ TEST(http, http3_basic) {
                             .build());
   ASSERT_EQ(res.error.has_value(), false);
   ASSERT_EQ(res.code, 200);
-  ASSERT_NE(
-      res.body.str().find("Congratulations, you loaded this page using HTTP/3"),
-      std::string::npos);
+  ASSERT_NE(res.body.find("Congratulations, you loaded this page using HTTP/3"),
+            std::string::npos);
 }
 
 TEST(http, 404_not_found) {
@@ -50,11 +49,11 @@ TEST(http, post_request) {
 
   ASSERT_EQ(res.error.has_value(), false);
   ASSERT_EQ(res.code, 200);
-  ASSERT_NE(res.body.str().find(R"("url": "https://postman-echo.com/post")"),
+  ASSERT_NE(res.body.find(R"("url": "https://postman-echo.com/post")"),
             std::string::npos);
-  ASSERT_NE(res.body.str().find(R"("hello": "world")"), std::string::npos);
-  ASSERT_NE(res.body.str().find(R"("a": "b")"), std::string::npos);
-  ASSERT_NE(res.body.str().find(R"("x": "y")"), std::string::npos);
+  ASSERT_NE(res.body.find(R"("hello": "world")"), std::string::npos);
+  ASSERT_NE(res.body.find(R"("a": "b")"), std::string::npos);
+  ASSERT_NE(res.body.find(R"("x": "y")"), std::string::npos);
 }
 
 TEST(http, gbk_encoding) {
@@ -67,7 +66,7 @@ TEST(http, gbk_encoding) {
   // `<title>69书吧_更新最快_无弹窗广告_无错小说阅读网</title>`.
   // Currently, encoding isn't handled correctly but at least this doesn't
   // crash or throw.
-  ASSERT_NE(res.body.str().find("<title>69"), std::string::npos);
+  ASSERT_NE(res.body.find("<title>69"), std::string::npos);
 }
 
 TEST(http, invalid_ca_bundle) {

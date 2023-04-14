@@ -86,7 +86,7 @@ RequestOptionsBuilder()
 
 This is the type of the object that is returned by the `request()` function.
 
-### `std::ostringstream body` member variable
+### `std::string body` member variable
 
 The response body.
 
@@ -128,7 +128,7 @@ int main() {
   if (res.error.has_value()) {
     std::cerr << "Error: " << res.error.value() << std::endl;
   } else {
-    std::cout << "Response: " << res.body.str() << std::endl;
+    std::cout << "Response: " << res.body << std::endl;
     std::cout << "Headers: {" << std::endl;
     for (const auto& [key, val] : res.headers) {
       std::cout << "  \"" << key << "\": \"" << val << "\"" << std::endl;

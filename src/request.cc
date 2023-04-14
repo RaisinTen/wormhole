@@ -12,7 +12,7 @@ namespace wormhole {
 namespace {
 
 size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata) {
-  static_cast<Response *>(userdata)->body
+  *static_cast<std::ostringstream *>(userdata)
       << std::string{const_cast<const char *>(ptr), size * nmemb};
   return size * nmemb;
 }
@@ -30,7 +30,8 @@ Response request(const std::string_view url, RequestOptions options) {
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_URL, url.data());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
+    std::ostringstream write_callback_data;
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &write_callback_data);
 
     switch (options.http_version()) {
 #define V(HTTP_VERSION)                                                        \
@@ -76,6 +77,8 @@ Response request(const std::string_view url, RequestOptions options) {
     } else {
       curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &data.code);
     }
+
+    data.body = write_callback_data.str();
 
     curl_header *current_header;
     curl_header *previous_header = nullptr;

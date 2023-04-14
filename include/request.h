@@ -4,7 +4,6 @@
 #include <filesystem>
 #include <map>
 #include <optional>
-#include <sstream>
 #include <string>
 #include <string_view>
 
@@ -98,7 +97,7 @@ private:
 };
 
 struct Response {
-  std::ostringstream body;
+  std::string body;
   long code;
   std::map<std::string, std::string> headers;
   std::optional<std::string> error;

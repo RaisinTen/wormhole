@@ -23,7 +23,7 @@ public:
 
   void OnOK() {
     Napi::Object response_object = Napi::Object::New(Env());
-    response_object.Set("body", response_->body.str());
+    response_object.Set("body", response_->body);
     response_object.Set("code", response_->code);
 
     Napi::Object headers = Napi::Object::New(Env());

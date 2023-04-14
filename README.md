@@ -30,7 +30,7 @@ Use the library in your program:
                         wormhole::RequestOptionsBuilder()
                             .set_http_version(wormhole::HTTPVersion::v3ONLY)
                             .build());
-  std::cout << res.body.str() << std::endl;
+  std::cout << res.body << std::endl;
 ...
 
 // Output:
