@@ -16,7 +16,15 @@ Use the package in your script:
 
 ```js
 const wormhole = require('@postman/wormhole');
-await wormhole.request('https://postman-echo.com/get');
+
+(async () => {
+  try {
+    const response = await wormhole.request('https://postman-echo.com/get');
+    console.log(response);
+  } catch(err) {
+    console.error(err);
+  }
+})();
 
 // Output:
 // {
