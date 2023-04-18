@@ -16,12 +16,6 @@ scripts/install-relocatable-libcurl-build-deps.sh
 npm run lint:sh
 ```
 
-Or if you prefer using ShellCheck directly:
-
-```sh
-shellcheck scripts/*.sh
-```
-
 #### Build
 
 ```sh
@@ -54,36 +48,16 @@ scripts/install-libwormhole-build-deps.sh
 npm run cpp:format
 ```
 
-Or if you prefer using ClangFormat directly:
-
-```sh
-clang-format --style=file -i src/*.cc test/*.cc binding/*.cc include/*.h
-```
-
 #### Build
 
 ```sh
 npm run build:cmake
 ```
 
-Or if you prefer using CMake directly:
-
-```sh
-cmake -S . -B cmake_build
-cmake --build cmake_build
-scripts/make-relocatable-libwormhole.sh
-```
-
 #### Test
 
 ```sh
 npm run test:cmake
-```
-
-Or if you prefer using CTest directly:
-
-```sh
-ctest --test-dir cmake_build
 ```
 
 ### NPM package
