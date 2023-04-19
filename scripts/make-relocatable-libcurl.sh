@@ -43,13 +43,13 @@ fi
 cp "$PREFIX/lib/libcrypto.dylib" .
 cp "$PREFIX/lib/libcurl.dylib" .
 cp "$PREFIX/lib/libnghttp3.dylib" .
+cp "$PREFIX/lib/libnghttp2.dylib" .
 cp "$PREFIX/lib/libngtcp2.dylib" .
 cp "$PREFIX/lib/libngtcp2_crypto_openssl.dylib" .
 cp "$PREFIX/lib/libssl.dylib" .
  
 # Copy other installed dependency libraries.
 # These are all libcurl dependencies.
-cp "$SYSTEM_LIB_PREFIX/libnghttp2/lib/libnghttp2.dylib" .
 cp "$SYSTEM_LIB_PREFIX/libidn2/lib/libidn2.dylib" .
 cp "$SYSTEM_LIB_PREFIX/zstd/lib/libzstd.dylib" .
 cp "$SYSTEM_LIB_PREFIX/brotli/lib/libbrotlidec.dylib" .
@@ -78,12 +78,12 @@ install_name_tool -id "@rpath/lib/libcurl.dylib" "libcurl.dylib"
 # Change identification names of built libraries.
 install_name_tool -id "@rpath/lib/libcrypto.dylib" "libcrypto.dylib"
 install_name_tool -id "@rpath/lib/libnghttp3.dylib" "libnghttp3.dylib"
+install_name_tool -id "@rpath/lib/libnghttp2.dylib" "libnghttp2.dylib"
 install_name_tool -id "@rpath/lib/libngtcp2.dylib" "libngtcp2.dylib"
 install_name_tool -id "@rpath/lib/libngtcp2_crypto_openssl.dylib" "libngtcp2_crypto_openssl.dylib"
 install_name_tool -id "@rpath/lib/libssl.dylib" "libssl.dylib"
 
 # Change identification names of installed libraries.
-install_name_tool -id "@rpath/lib/libnghttp2.dylib" "libnghttp2.dylib"
 install_name_tool -id "@rpath/lib/libidn2.dylib" "libidn2.dylib"
 install_name_tool -id "@rpath/lib/libunistring.dylib" "libunistring.dylib"
 install_name_tool -id "@rpath/lib/libintl.dylib" "libintl.dylib"
@@ -97,6 +97,7 @@ install_name_tool -id "@rpath/lib/libbrotlicommon.dylib" "libbrotlicommon.dylib"
 
 # Change the dependent built shared library install names in libcurl
 install_name_tool -change "$PREFIX/lib/libnghttp3.3.dylib" "@loader_path/libnghttp3.dylib" "libcurl.dylib"
+install_name_tool -change "$PREFIX/lib/libnghttp2.14.dylib" "@loader_path/libnghttp2.dylib" "libcurl.dylib"
 install_name_tool -change "$PREFIX/lib/libngtcp2_crypto_openssl.4.dylib" "@loader_path/libngtcp2_crypto_openssl.dylib" "libcurl.dylib"
 install_name_tool -change "$PREFIX/lib/libngtcp2.10.dylib" "@loader_path/libngtcp2.dylib" "libcurl.dylib"
 install_name_tool -change "$PREFIX/lib/libssl.81.3.dylib" "@loader_path/libssl.dylib" "libcurl.dylib"
@@ -113,7 +114,6 @@ install_name_tool -change "$PREFIX/lib/libcrypto.81.3.dylib" "@loader_path/libcr
 # version suffixes. No need to do this for built libraries for now because we
 # are in full control of those version numbers.
 # Refs: https://unix.stackexchange.com/a/138658
-install_name_tool -change "$SYSTEM_LIB_PREFIX/libnghttp2/lib/$(stat -f "%Y" "$SYSTEM_LIB_PREFIX/libnghttp2/lib/libnghttp2.dylib")" "@loader_path/libnghttp2.dylib" "libcurl.dylib"
 install_name_tool -change "$SYSTEM_LIB_PREFIX/libidn2/lib/$(stat -f "%Y" "$SYSTEM_LIB_PREFIX/libidn2/lib/libidn2.dylib")" "@loader_path/libidn2.dylib" "libcurl.dylib"
 install_name_tool -change "$SYSTEM_LIB_PREFIX/zstd/lib/$(stat -f "%Y" "$SYSTEM_LIB_PREFIX/zstd/lib/libzstd.dylib")" "@loader_path/libzstd.dylib" "libcurl.dylib"
 install_name_tool -change "$SYSTEM_LIB_PREFIX/brotli/lib/$(stat -f "%Y" "$SYSTEM_LIB_PREFIX/brotli/lib/libbrotlidec.dylib")" "@loader_path/libbrotlidec.dylib" "libcurl.dylib"
