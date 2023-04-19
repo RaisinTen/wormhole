@@ -6,6 +6,29 @@
 #include <optional>
 #include <string>
 
+namespace {
+auto to_http_version(const std::string &versionString)
+    -> std::optional<wormhole::HTTPVersion> {
+  if (versionString == "v1.0") {
+    return wormhole::HTTPVersion::v1_0;
+  } else if (versionString == "1.1") {
+    return wormhole::HTTPVersion::v1_1;
+  } else if (versionString == "2.0") {
+    return wormhole::HTTPVersion::v2;
+  } else if (versionString == "2-TLS") {
+    return wormhole::HTTPVersion::v2_TLS;
+  } else if (versionString == "2-prior-knowledge") {
+    return wormhole::HTTPVersion::v2_PRIOR_KNOWLEDGE;
+  } else if (versionString == "3") {
+    return wormhole::HTTPVersion::v3;
+  } else if (versionString == "3-only") {
+    return wormhole::HTTPVersion::v3_ONLY;
+  } else {
+    return std::nullopt;
+  }
+}
+} // namespace
+
 class HttpRequestWorker : public Napi::AsyncWorker {
 public:
   HttpRequestWorker(Napi::Env env, std::string url,
@@ -68,8 +91,8 @@ Napi::Value Request(const Napi::CallbackInfo &info) {
 
     Napi::Object options(env, info[1]);
 
-    if (options.Has("http")) {
-      Napi::Value value = options.Get("http");
+    if (options.Has("httpVersion")) {
+      Napi::Value value = options.Get("httpVersion");
       if (!value.IsString()) {
         Napi::TypeError::New(env, "The http version needs to be a string.")
             .ThrowAsJavaScriptException();
@@ -77,21 +100,15 @@ Napi::Value Request(const Napi::CallbackInfo &info) {
       }
 
       std::string http_version_string(Napi::String(env, value));
+      std::optional<wormhole::HTTPVersion> http_version =
+          to_http_version(http_version_string);
 
-      if (false) {
-#define V(HTTP_VERSION)                                                        \
-  }                                                                            \
-  else if (http_version_string == "v" #HTTP_VERSION) {                         \
-    request_options_builder.set_http_version(                                  \
-        wormhole::HTTPVersion::v##HTTP_VERSION);
-
-        WORMHOLE_HTTP_VERSIONS(V)
-#undef V
-      } else {
+      if (!http_version.has_value()) {
         Napi::TypeError::New(env, "Invalid http version string.")
             .ThrowAsJavaScriptException();
         return {};
       }
+      request_options_builder.set_http_version(http_version.value());
     }
 
     if (options.Has("method")) {

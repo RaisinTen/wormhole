@@ -76,7 +76,7 @@ Use the library in your program:
   wormhole::Response res =
       wormhole::request("https://quic.aiortc.org/",
                         wormhole::RequestOptionsBuilder()
-                            .set_http_version(wormhole::HTTPVersion::v3ONLY)
+                            .set_http_version(wormhole::HTTPVersion::v3_ONLY)
                             .build());
   std::cout << res.body << std::endl;
 ...
@@ -108,7 +108,7 @@ const wormhole = require('@postman/wormhole');
 
 (async () => {
   const response = await wormhole.request('https://quic.aiortc.org', {
-    http: 'v3ONLY'
+    httpVersion: '3-only'
   });
   console.log(response);
 })();

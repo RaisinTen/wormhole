@@ -18,7 +18,7 @@ TEST(http, http3_basic) {
   wormhole::Response res =
       wormhole::request("https://quic.aiortc.org/",
                         wormhole::RequestOptionsBuilder()
-                            .set_http_version(wormhole::HTTPVersion::v3ONLY)
+                            .set_http_version(wormhole::HTTPVersion::v3_ONLY)
                             .build());
   ASSERT_EQ(res.error.has_value(), false);
   ASSERT_EQ(res.code, 200);
@@ -74,4 +74,10 @@ TEST(http, invalid_ca_bundle) {
       "https://postman-echo.com/post",
       wormhole::RequestOptionsBuilder().set_ca_bundle("/a/b/c").build());
   ASSERT_EQ(res.error, "Invalid CA bundle.");
+}
+
+TEST(http, default_request_options) {
+  wormhole::RequestOptions options = wormhole::RequestOptionsBuilder().build();
+  ASSERT_EQ(options.http_version(), wormhole::HTTPVersion::v2_TLS);
+  ASSERT_EQ(options.method(), wormhole::Method::GET);
 }

@@ -4,9 +4,9 @@
 
 * `url`: `<string>` The requested URL string.
 * `options`: `<Object>` Configuration settings of the outgoing request.
-  * `http`: `<string>` The request HTTP version. It can be one of `v1_0`,
-    `v1_1`, `v2_0`, `v2TLS`, `v2_PRIOR_KNOWLEDGE`, `v3`, `v3ONLY`.
-    **Default:** `v2TLS`. See [`HTTPVersion` enum](C++-API.md#httpversion-enum).
+  * `httpVersion`: `<string>` The request HTTP version. It can be one of `1.0`,
+    `1.1`, `2.0`, `2-TLS`, `2-prior-knowledge`, `3`, `3-only`.
+    **Default:** `2-TLS`. See [`HTTPVersion` enum](C++-API.md#httpversion-enum).
   * `method`: `<string>` The request method. It can be one of `'GET'`, `'HEAD'`,
     `'POST'`, `'PUT'`, `'DELETE'`, `'CONNECT'`, `'OPTIONS'`, `'TRACE'` and
     `'PATCH'`. **Default:** `GET`.
@@ -15,7 +15,6 @@
   * `ca`: `<string>` The certificate authority bundle file path.
 * Returns: `Promise<Object>` The response object.
   * `body`: `<string>` The response body.
-  * `code`: `<number>` The response status code.
   * `code`: `<number>` The response status code.
   * `headers`: `<Object>` The response headers object with string keys and
     string values.

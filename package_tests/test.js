@@ -159,7 +159,7 @@ describe('Basic HTTP3 test', async () => {
 
   it('request', async () => {
     // Found this url in https://bagder.github.io/HTTP3-test/.
-    response = await wormhole.request('https://quic.aiortc.org/', { http: 'v3' });
+    response = await wormhole.request('https://quic.aiortc.org/', { httpVersion: '3' });
   }).timeout(6_000);
 
   it('code', () => {
@@ -271,4 +271,25 @@ describe('Invalid CA bundle', async () => {
       message: 'Invalid CA bundle.'
     });
   });
+});
+
+describe('Invalid httpVersion option', async () => {
+  it('not valid version', async () => {
+    await rejects(async () => {
+      await wormhole.request('https://postman-echo.com/get', { httpVersion: 'v3' });
+    }, {
+      name: 'TypeError',
+      message: 'Invalid http version string.'
+    });
+  });
+
+  it('wrong typed version', async () => {
+    await rejects(async () => {
+      await wormhole.request('https://postman-echo.com/get', { httpVersion: 3 });
+    }, {
+      name: 'TypeError',
+      message: 'The http version needs to be a string.'
+    });
+  });
+
 });

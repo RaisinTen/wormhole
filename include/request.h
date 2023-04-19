@@ -9,20 +9,14 @@
 
 namespace wormhole {
 
-#define WORMHOLE_HTTP_VERSIONS(V)                                              \
-  V(1_0)                                                                       \
-  V(1_1)                                                                       \
-  V(2_0)                                                                       \
-  V(2TLS)                                                                      \
-  V(2_PRIOR_KNOWLEDGE)                                                         \
-  V(3)                                                                         \
-  V(3ONLY)
-
 enum class HTTPVersion {
-#define V(HTTP_VERSION) v##HTTP_VERSION,
-
-  WORMHOLE_HTTP_VERSIONS(V)
-#undef V
+  v1_0,
+  v1_1,
+  v2,
+  v2_TLS,
+  v2_PRIOR_KNOWLEDGE,
+  v3,
+  v3_ONLY
 };
 
 #define WORMHOLE_HTTP_METHODS(V)                                               \
@@ -90,7 +84,7 @@ public:
   }
 
 private:
-  HTTPVersion http_version_ = HTTPVersion::v2TLS;
+  HTTPVersion http_version_ = HTTPVersion::v2_TLS;
   Method method_ = Method::GET;
   std::map<std::string, std::string> headers_;
   std::optional<std::filesystem::path> ca_bundle_;

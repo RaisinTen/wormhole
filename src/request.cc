@@ -17,6 +17,36 @@ size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata) {
   return size * nmemb;
 }
 
+auto set_curl_http_version(CURL *curl, HTTPVersion version) -> void {
+  long curl_http_version;
+
+  switch (version) {
+  case HTTPVersion::v1_0:
+    curl_http_version = CURL_HTTP_VERSION_1_0;
+    break;
+  case HTTPVersion::v1_1:
+    curl_http_version = CURL_HTTP_VERSION_1_1;
+    break;
+  case HTTPVersion::v2:
+    curl_http_version = CURL_HTTP_VERSION_2;
+    break;
+  case HTTPVersion::v2_TLS:
+    curl_http_version = CURL_HTTP_VERSION_2TLS;
+    break;
+  case HTTPVersion::v2_PRIOR_KNOWLEDGE:
+    curl_http_version = CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE;
+    break;
+  case HTTPVersion::v3:
+    curl_http_version = CURL_HTTP_VERSION_3;
+    break;
+  case HTTPVersion::v3_ONLY:
+    curl_http_version = CURL_HTTP_VERSION_3ONLY;
+    break;
+  }
+
+  curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, curl_http_version);
+}
+
 } // namespace
 
 Response request(const std::string_view url, RequestOptions options) {
@@ -33,16 +63,7 @@ Response request(const std::string_view url, RequestOptions options) {
     std::ostringstream write_callback_data;
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &write_callback_data);
 
-    switch (options.http_version()) {
-#define V(HTTP_VERSION)                                                        \
-  case HTTPVersion::v##HTTP_VERSION:                                           \
-    curl_easy_setopt(curl, CURLOPT_HTTP_VERSION,                               \
-                     CURL_HTTP_VERSION_##HTTP_VERSION);                        \
-    break;
-
-      WORMHOLE_HTTP_VERSIONS(V)
-#undef V
-    }
+    set_curl_http_version(curl, options.http_version());
 
     switch (options.method()) {
 #define V(HTTP_METHOD)                                                         \
