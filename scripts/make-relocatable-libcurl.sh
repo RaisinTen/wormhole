@@ -29,13 +29,6 @@ cp -R "$PREFIX/include/curl" include
 mkdir lib
 cd lib
 
-if [ "$(arch)" = "arm64" ]
-then
-  SYSTEM_LIB_PREFIX="/opt/homebrew/opt"
-else
-  SYSTEM_LIB_PREFIX="/usr/local/opt"
-fi
-
 # Copy libraries by resolving the symlinks, so that `-lcurl` could be passed
 # to the linker instead of `-lcurl.4`.
 
@@ -47,10 +40,6 @@ cp "$PREFIX/lib/libnghttp2.dylib" .
 cp "$PREFIX/lib/libngtcp2.dylib" .
 cp "$PREFIX/lib/libngtcp2_crypto_openssl.dylib" .
 cp "$PREFIX/lib/libssl.dylib" .
- 
-# Copy other installed dependency libraries.
-# These are all libcurl dependencies.
-cp "$SYSTEM_LIB_PREFIX/zstd/lib/libzstd.dylib" .
 
 # Set the identification name of the entrypoint dylib - libcurl.
 # So here, the requirement is that whatever dylib / executable that attempts to
@@ -74,13 +63,6 @@ install_name_tool -id "@rpath/lib/libngtcp2.dylib" "libngtcp2.dylib"
 install_name_tool -id "@rpath/lib/libngtcp2_crypto_openssl.dylib" "libngtcp2_crypto_openssl.dylib"
 install_name_tool -id "@rpath/lib/libssl.dylib" "libssl.dylib"
 
-# Change identification names of installed libraries.
-install_name_tool -id "@rpath/lib/libzstd.dylib" "libzstd.dylib"
-
-# Change the dependent shared library install names in built libraries
-
-# Change the dependent shared library install names in libcurl
-
 # Change the dependent built shared library install names in libcurl
 install_name_tool -change "$PREFIX/lib/libnghttp3.3.dylib" "@loader_path/libnghttp3.dylib" "libcurl.dylib"
 install_name_tool -change "$PREFIX/lib/libnghttp2.14.dylib" "@loader_path/libnghttp2.dylib" "libcurl.dylib"
@@ -89,18 +71,9 @@ install_name_tool -change "$PREFIX/lib/libngtcp2.10.dylib" "@loader_path/libngtc
 install_name_tool -change "$PREFIX/lib/libssl.81.3.dylib" "@loader_path/libssl.dylib" "libcurl.dylib"
 install_name_tool -change "$PREFIX/lib/libcrypto.81.3.dylib" "@loader_path/libcrypto.dylib" "libcurl.dylib"
 
-# Change the dependent installed shared library install names in libcurl
-
 # TODO(RaisinTen): Add assertions to make sure that the old path in
 # `install_name_tool -change old new file` command exists. Currently, if it
 # doesn't exist the command doesn't indicate that in anyway.
-
-# The `stat -f "%Y" <symlink/path>` command follows a symlink just once. This
-# has been done so that we can use the library paths without hardcoding the
-# version suffixes. No need to do this for built libraries for now because we
-# are in full control of those version numbers.
-# Refs: https://unix.stackexchange.com/a/138658
-install_name_tool -change "$SYSTEM_LIB_PREFIX/zstd/lib/$(stat -f "%Y" "$SYSTEM_LIB_PREFIX/zstd/lib/libzstd.dylib")" "@loader_path/libzstd.dylib" "libcurl.dylib"
 
 # Change the dependent shared library install names in libngtcp2_crypto_openssl
 install_name_tool -change "$PREFIX/lib/libngtcp2.10.dylib" "@loader_path/libngtcp2.dylib" "libngtcp2_crypto_openssl.dylib"
