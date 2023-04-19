@@ -15,6 +15,8 @@ autoreconf -fi
   --enable-warnings \
   --enable-werror \
   --enable-debug \
-  --with-test-nghttpx="$PREFIX/bin/nghttpx"
+  --with-test-nghttpx="$PREFIX/bin/nghttpx" \
+  --without-brotli \
+  --without-libidn2
 make CFLAGS="-mmacosx-version-min=10.15 -Wno-deprecated-declarations" -j"$(nproc)"
 make install

@@ -50,12 +50,7 @@ cp "$PREFIX/lib/libssl.dylib" .
  
 # Copy other installed dependency libraries.
 # These are all libcurl dependencies.
-cp "$SYSTEM_LIB_PREFIX/libidn2/lib/libidn2.dylib" .
 cp "$SYSTEM_LIB_PREFIX/zstd/lib/libzstd.dylib" .
-
-# These are all libidn2 dependencies.
-cp "$SYSTEM_LIB_PREFIX/libunistring/lib/libunistring.dylib" .
-cp "$SYSTEM_LIB_PREFIX/gettext/lib/libintl.dylib" .
 
 # Set the identification name of the entrypoint dylib - libcurl.
 # So here, the requirement is that whatever dylib / executable that attempts to
@@ -80,9 +75,6 @@ install_name_tool -id "@rpath/lib/libngtcp2_crypto_openssl.dylib" "libngtcp2_cry
 install_name_tool -id "@rpath/lib/libssl.dylib" "libssl.dylib"
 
 # Change identification names of installed libraries.
-install_name_tool -id "@rpath/lib/libidn2.dylib" "libidn2.dylib"
-install_name_tool -id "@rpath/lib/libunistring.dylib" "libunistring.dylib"
-install_name_tool -id "@rpath/lib/libintl.dylib" "libintl.dylib"
 install_name_tool -id "@rpath/lib/libzstd.dylib" "libzstd.dylib"
 
 # Change the dependent shared library install names in built libraries
@@ -108,7 +100,6 @@ install_name_tool -change "$PREFIX/lib/libcrypto.81.3.dylib" "@loader_path/libcr
 # version suffixes. No need to do this for built libraries for now because we
 # are in full control of those version numbers.
 # Refs: https://unix.stackexchange.com/a/138658
-install_name_tool -change "$SYSTEM_LIB_PREFIX/libidn2/lib/$(stat -f "%Y" "$SYSTEM_LIB_PREFIX/libidn2/lib/libidn2.dylib")" "@loader_path/libidn2.dylib" "libcurl.dylib"
 install_name_tool -change "$SYSTEM_LIB_PREFIX/zstd/lib/$(stat -f "%Y" "$SYSTEM_LIB_PREFIX/zstd/lib/libzstd.dylib")" "@loader_path/libzstd.dylib" "libcurl.dylib"
 
 # Change the dependent shared library install names in libngtcp2_crypto_openssl
@@ -118,12 +109,6 @@ install_name_tool -change "$PREFIX/lib/libcrypto.81.3.dylib" "@loader_path/libcr
 
 # Change the dependent shared library install names in libssl
 install_name_tool -change "$PREFIX/lib/libcrypto.81.3.dylib" "@loader_path/libcrypto.dylib" "libssl.dylib"
-
-# Change the dependent shared library install names in installed libraries
-
-# Change the dependent shared library install names in libidn2
-install_name_tool -change "$SYSTEM_LIB_PREFIX/libunistring/lib/$(stat -f "%Y" "$SYSTEM_LIB_PREFIX/libunistring/lib/libunistring.dylib")" "@loader_path/libunistring.dylib" "libidn2.dylib"
-install_name_tool -change "$SYSTEM_LIB_PREFIX/gettext/lib/$(stat -f "%Y" "$SYSTEM_LIB_PREFIX/gettext/lib/libintl.dylib")" "@loader_path/libintl.dylib" "libidn2.dylib"
 
 # Replace the invalidated signature.
 # NOTE: We tried removing the signatures before running the `install_name_tool`
