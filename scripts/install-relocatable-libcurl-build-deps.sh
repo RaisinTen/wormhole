@@ -5,7 +5,6 @@ set -o errexit
 set -o nounset
 
 brew install automake # Used directly in `./scripts/build-*.sh` to build curl and its dependencies.
-brew install brotli # For Brotli support.
 brew install coreutils # So that `realpath` can be used.
 brew install libidn2 # For Idn2 support.
 brew install libtool # Nghttp3 needs it while running automake.
