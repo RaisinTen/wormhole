@@ -147,7 +147,14 @@ const wormhole = require('@postman/wormhole');
 // }
 ```
 
-### OpenSSL as the backend for cryptography
+### OpenSSL as the backend for SSL
 
 The wormhole project uses the quictls fork of OpenSSL -
 https://github.com/quictls/openssl for SSL.
+
+## Platform support
+
+### macOS
+
+* `x86_64` - macOS 10.15 and above
+* `arm64` - macOS 11 and above
