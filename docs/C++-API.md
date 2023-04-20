@@ -38,6 +38,10 @@ The supported method types. Possible values:
 The `RequestOptionsBuilder` class provides an API using which a `RequestOptions`
 instance can be created.
 
+### `RequestOptionsBuilder &set_http_version(HTTPVersion http_version)` method
+
+Setter for the HTTP version.
+
 ### `RequestOptionsBuilder &set_method(Method method)` method
 
 Setter for the method.
@@ -64,11 +68,15 @@ The `RequestOptions` class is used to build an object that contains the options
 using which a request can be configured. An instance of this class can be
 constructed by the `RequestOptionsBuilder` class.
 
+### `HTTPVersion http_version() const` method
+
+The getter for the HTTP version.
+
 ### `Method method() const` method
 
 The getter for the method type.
 
-### `Method method() const` method
+### `const std::map<std::string, std::string> &headers() const` method
 
 The getter for the headers.
 
@@ -83,8 +91,8 @@ The getter for the body.
 Example usage:
 
 ```cc
-RequestOptionsBuilder().build()
-RequestOptionsBuilder()
+RequestOptions options = RequestOptionsBuilder()
+    .set_http_version(HTTPVersion::v2_TLS)
     .set_method(Method::POST)
     .set_body("Wormhole body")
     .set_ca_bundle("../package_tests/fixtures/http2-test-certificate/localhost-cert.pem")
