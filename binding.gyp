@@ -21,9 +21,19 @@
       "<!(node -p \"require('node-addon-api').gyp\")"
     ],
     'defines': [ 'NAPI_DISABLE_CPP_EXCEPTIONS' ],
-    'xcode_settings': {
-      'CLANG_CXX_LANGUAGE_STANDARD': 'c++17',
-      'MACOSX_DEPLOYMENT_TARGET': '10.15',
-    }
+    'conditions': [
+      ['target_arch=="arm64"', {
+        'xcode_settings': {
+          'CLANG_CXX_LANGUAGE_STANDARD': 'c++17',
+          'MACOSX_DEPLOYMENT_TARGET': '11.0',
+        },
+      }],
+      ['target_arch=="x64"', {
+        'xcode_settings': {
+          'CLANG_CXX_LANGUAGE_STANDARD': 'c++17',
+          'MACOSX_DEPLOYMENT_TARGET': '10.15',
+        }
+      }]
+    ]
   }]
 }

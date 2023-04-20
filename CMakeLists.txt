@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.21)
 
-set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15")
+if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
+  # Apple started silicon support from macos 11
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0")
+else()
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15")
+endif()
 
 project(wormhole VERSION 1.0.0 DESCRIPTION "A custom networking layer for Postman")
 

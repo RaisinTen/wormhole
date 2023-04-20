@@ -4,6 +4,17 @@ set -o xtrace
 set -o errexit
 set -o nounset
 
+# the default deployment target is read from this environment variable. 
+# This option only affects Darwin targets.
+ARCH="$(uname -m)"
+if [ "$ARCH" = 'arm64' ]
+then
+  # The Apple silicon support is added starting macos 11
+  export MACOSX_DEPLOYMENT_TARGET="11.0"
+else
+  export MACOSX_DEPLOYMENT_TARGET="10.15"
+fi
+
 # NOTE: This detects the script directory, so that this script can be run from
 # any directory in the file system.
 # Refs: https://stackoverflow.com/q/59895/11395352
