@@ -39,13 +39,16 @@ public:
   Method method() const { return method_; }
   const std::map<std::string, std::string> &headers() const { return headers_; }
   std::optional<std::filesystem::path> ca_bundle() const { return ca_bundle_; }
+  std::optional<std::string> body() const { return body_; }
 
 private:
   RequestOptions(HTTPVersion http_version, Method method,
                  std::map<std::string, std::string> headers,
-                 std::optional<std::filesystem::path> ca_bundle)
-      : http_version_{http_version}, method_{method},
-        headers_{std::move(headers)}, ca_bundle_{std::move(ca_bundle)} {}
+                 std::optional<std::filesystem::path> ca_bundle,
+                 std::optional<std::string> body)
+      : http_version_{http_version}, method_{method}, headers_{std::move(
+                                                          headers)},
+        ca_bundle_{std::move(ca_bundle)}, body_{std::move(body)} {}
 
   friend RequestOptionsBuilder;
 
@@ -53,6 +56,7 @@ private:
   Method method_;
   std::map<std::string, std::string> headers_;
   std::optional<std::filesystem::path> ca_bundle_;
+  std::optional<std::string> body_;
 };
 
 class RequestOptionsBuilder {
@@ -78,9 +82,14 @@ public:
     return *this;
   }
 
+  RequestOptionsBuilder &set_body(std::string body) {
+    body_ = std::move(body);
+    return *this;
+  }
+
   RequestOptions build() {
     return RequestOptions(http_version_, method_, std::move(headers_),
-                          std::move(ca_bundle_));
+                          std::move(ca_bundle_), std::move(body_));
   }
 
 private:
@@ -88,6 +97,7 @@ private:
   Method method_ = Method::GET;
   std::map<std::string, std::string> headers_;
   std::optional<std::filesystem::path> ca_bundle_;
+  std::optional<std::string> body_;
 };
 
 struct Response {

@@ -92,6 +92,11 @@ Response request(const std::string_view url, RequestOptions options) {
       curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path.c_str());
     }
 
+    if (options.body().has_value()) {
+      std::string body{options.body().value()};
+      curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
+    }
+
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
       data.error = curl_easy_strerror(res);

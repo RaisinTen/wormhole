@@ -183,6 +183,17 @@ Napi::Value Request(const Napi::CallbackInfo &info) {
       std::filesystem::path ca_path{ca_string};
       request_options_builder.set_ca_bundle(std::move(ca_path));
     }
+
+    if (options.Has("body")) {
+      Napi::Value value = options.Get("body");
+      if (!value.IsString()) {
+        Napi::TypeError::New(env, "The body needs to be a string.")
+            .ThrowAsJavaScriptException();
+        return {};
+      }
+
+      request_options_builder.set_body(Napi::String(env, value));
+    }
   }
 
   HttpRequestWorker *worker =

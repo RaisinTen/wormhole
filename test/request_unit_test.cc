@@ -44,6 +44,7 @@ TEST(http, post_request) {
       "https://postman-echo.com/post",
       wormhole::RequestOptionsBuilder()
           .set_method(wormhole::Method::POST)
+          .set_body("Wormhole body")
           .set_headers({{"hello", "world"}, {"a", "b"}, {"x", "y"}})
           .build());
 
@@ -54,6 +55,7 @@ TEST(http, post_request) {
   ASSERT_NE(res.body.find(R"("hello": "world")"), std::string::npos);
   ASSERT_NE(res.body.find(R"("a": "b")"), std::string::npos);
   ASSERT_NE(res.body.find(R"("x": "y")"), std::string::npos);
+  ASSERT_NE(res.body.find(R"("Wormhole body": "")"), std::string::npos);
 }
 
 TEST(http, gbk_encoding) {

@@ -50,6 +50,10 @@ Setter for the headers.
 
 Setter for the CA bundle path.
 
+### `RequestOptionsBuilder &set_body(std::string body)` method
+
+Setter for the body.
+
 ### `RequestOptions build()` method
 
 Builds the `RequestOptions` object that can be used for sending the request.
@@ -72,12 +76,17 @@ The getter for the headers.
 
 The getter for the CA bundle file path.
 
+### `std::optional<std::string> body() const` method
+
+The getter for the body.
+
 Example usage:
 
 ```cc
 RequestOptionsBuilder().build()
 RequestOptionsBuilder()
     .set_method(Method::POST)
+    .set_body("Wormhole body")
     .set_ca_bundle("../package_tests/fixtures/http2-test-certificate/localhost-cert.pem")
     .build());
 ```
@@ -123,6 +132,7 @@ int main() {
       "https://postman-echo.com/post",
       RequestOptionsBuilder()
           .set_method(Method::POST)
+          .set_body("Wormhole body")
           .set_headers({{"hello", "world"}, {"a", "b"}, {"x", "y"}})
           .build());
   if (res.error.has_value()) {
@@ -156,7 +166,9 @@ int main() {
 //     "x": "y",
 //     "content-type": "application/json"
 //   },
-//   "json": null,
+//   "json": {
+//    "Wormhole body": ""
+//   },
 //   "url": "https://postman-echo.com/post"
 // }
 // Headers: {

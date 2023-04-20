@@ -198,7 +198,7 @@ describe('POST request', async () => {
   let response;
 
   it('request', async () => {
-    response = await wormhole.request('https://postman-echo.com/post', { method: 'POST' });
+    response = await wormhole.request('https://postman-echo.com/post', { method: 'POST', body: 'Wormhole body' });
   }).timeout(6_000);
 
   it('code', () => {
@@ -217,6 +217,10 @@ describe('POST request', async () => {
 
   it('url', () => {
     strictEqual(responseJSON.url, 'https://postman-echo.com/post');
+  });
+
+  it('body', () => {
+    deepStrictEqual(Object.keys(responseJSON.json), [ 'Wormhole body' ]);
   });
 });
 

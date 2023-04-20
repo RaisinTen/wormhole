@@ -13,6 +13,7 @@
   * `headers`: `<Object>` The request headers object with string keys and string
     values. **Default:** `{}`.
   * `ca`: `<string>` The certificate authority bundle file path.
+  * `body`: `<string>` The request body.
 * Returns: `Promise<Object>` The response object.
   * `body`: `<string>` The response body.
   * `code`: `<number>` The response status code.
@@ -27,6 +28,7 @@ const wormhole = require('@postman/wormhole');
 (async () => {
   const response = await wormhole.request('https://postman-echo.com/post', {
     method: 'POST',
+    body: 'Wormhole body',
     headers: {
       hello: 'world',
       a: 'b',
@@ -54,7 +56,9 @@ const wormhole = require('@postman/wormhole');
 //     '    "x": "y",\n' +
 //     '    "content-type": "application/json"\n' +
 //     '  },\n' +
-//     '  "json": null,\n' +
+//     '  "json": {\n' +
+//     '    "Wormhole body": ""\n' +
+//     '  },\n' +
 //     '  "url": "https://postman-echo.com/post"\n' +
 //     '}',
 //   code: 200,
