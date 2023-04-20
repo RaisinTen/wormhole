@@ -1,6 +1,6 @@
 {
   "name": "@postman/wormhole",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "description": "A custom network layer for Postman.",
   "main": "index.js",
   "directories": {
