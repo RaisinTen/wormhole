@@ -45,7 +45,7 @@ scripts/install-libwormhole-build-deps.sh
 #### Format
 
 ```sh
-npm run cpp:format
+npm run format:cpp
 ```
 
 #### Build
