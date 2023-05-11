@@ -10,6 +10,9 @@
 scripts/install-relocatable-libcurl-build-deps.sh
 ```
 
+> Note: Once relocatable-libcurl is build subsequent runs
+> will skip installation, use the `--force` option if you want to install.
+
 #### Lint
 
 ```sh
@@ -21,6 +24,9 @@ npm run lint:sh
 ```sh
 scripts/build.sh
 ```
+
+> Note: Once the executable is generated, subsequent runs
+> will skip the build, use the `--force` option if you want to build.
 
 #### Test
 

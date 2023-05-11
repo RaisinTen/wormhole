@@ -4,9 +4,27 @@ set -o xtrace
 set -o errexit
 set -o nounset
 
-# the default deployment target is read from this environment variable. 
-# This option only affects Darwin targets.
 ARCH="$(uname -m)"
+RELOCATABLE_LIBCURL_DIR="relocatable_libcurl_$ARCH"
+FORCE_REINSTALL=false
+if [ $# -gt 0 ]; then
+    case "$1" in
+        --force)
+            FORCE_REINSTALL=true
+            ;;
+        *)
+    esac
+fi
+
+# Exit if the directory already exists or the user does not want to reinstall.
+if [ -d "$RELOCATABLE_LIBCURL_DIR" ] && [ "$FORCE_REINSTALL" = false ]; then
+  echo "The directory $RELOCATABLE_LIBCURL_DIR already exists."
+  echo "Please remove it first if you want to reinstall or use --force option."
+  exit 0
+fi
+
+# The default deployment target is read from this environment variable. 
+# This option only affects Darwin targets.
 if [ "$ARCH" = 'arm64' ]
 then
   # The Apple silicon support is added starting macos 11

@@ -14,12 +14,17 @@ executors:
 
 commands:
   install-relocatable-libcurl-build-deps:
+    parameters:
+      arch:
+        type: enum
+        enum: [ x86_64, arm64 ]
     steps:
       - restore_cache:
           keys:
             - v1-brew-{{ arch }}-{{ checksum "scripts/install-relocatable-libcurl-build-deps.sh" }}
       - run:
           name: Installing dependencies
+          description: We install the relocatable-libcurl dependencies only if the cached relocatable_libcurl_<arch> directory doesn't exist.
           command: scripts/install-relocatable-libcurl-build-deps.sh
       - save_cache:
           key: v1-brew-{{ arch }}-{{ checksum "scripts/install-relocatable-libcurl-build-deps.sh" }}
@@ -108,6 +113,7 @@ commands:
     steps:
       - run:
           name: Build relocatable libcurl for << parameters.arch >>
+          description: We build relocatable-libcurl only if the cached relocatable_libcurl_<arch> directory doesn't exist.
           command: scripts/build.sh
       - run:
           name: Create relocatable_libcurl_<< parameters.arch >>.zip
@@ -141,12 +147,6 @@ commands:
       - run:
           name: Build NPM project
           command: npm run build --verbose
-
-  test-curl-build:
-    steps:
-      - run:
-          name: Curl test
-          command: ./curl_build/vendor_install/bin/curl --http3 https://postman-echo.com/get
 
   test-cmake-library:
     steps:
@@ -187,12 +187,20 @@ jobs:
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
       - checkout
-      - install-relocatable-libcurl-build-deps
+      - restore_cache:
+          name: Restore the cached relocatable-libcurl directory for << parameters.arch >>
+          key: libcurl-v1-{{ arch }}-{{ checksum "DEPENDENCIES" }}
+      - install-relocatable-libcurl-build-deps:
+          arch: << parameters.arch >>
       - build-relocatable-libcurl:
           arch: << parameters.arch >>
-      - test-curl-build
       - persist_to_workspace:
           root: .
+          paths:
+            - relocatable_libcurl_<< parameters.arch >>
+      - save_cache:
+          name: Save libcurl for << parameters.arch >>
+          key: libcurl-v1-{{ arch }}-{{ checksum "DEPENDENCIES" }}
           paths:
             - relocatable_libcurl_<< parameters.arch >>
 
