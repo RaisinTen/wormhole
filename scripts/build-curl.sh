@@ -15,6 +15,7 @@ autoreconf -fi
   --enable-warnings \
   --enable-werror \
   --enable-debug \
+  --enable-websockets \
   --with-test-nghttpx="$PREFIX/bin/nghttpx" \
   --without-brotli \
   --without-libidn2 \
