@@ -4,6 +4,10 @@ const {
   strictEqual,
   rejects,
 } = require('node:assert');
+const child_process = require('node:child_process');
+const fs = require('node:fs');
+const http2 = require('node:http2');
+const path = require('node:path');
 
 const wormhole = require('..');
 
@@ -98,23 +102,34 @@ describe('Basic HTTPS test', async () => {
 // TODO(RaisinTen): When this test is moved to the bottom of this file, for some
 // reason, the request call fails with a `Error: Couldn't connect to server`
 // exception.
-describe('Basic HTTP2 test', async () => {
-  let response;
+describe('Basic HTTP2 test', async function () {
+  const temporaryDirectory = path.join(__dirname, '.tmp', this.title);
+  const key = path.join(temporaryDirectory, 'localhost-privkey.pem');
+  const ca = path.join(temporaryDirectory, 'localhost-cert.pem');
+
   let server;
+
+  let response;
   let port;
-  let ca;
 
   before(async () => {
     // HTTP2 server setup code from the Node.js `http2` module documentation.
     // Refs: https://nodejs.org/api/http2.html#server-side-example
-    const http2 = require('node:http2');
-    const fs = require('node:fs');
-    const path = require('node:path');
-
-    ca = path.join(__dirname, 'fixtures', 'http2-test-certificate', 'localhost-cert.pem');
+    fs.mkdirSync(temporaryDirectory, { recursive: true });
+    child_process.execFileSync('openssl', [
+      'req',
+      '-x509',
+      '-newkey',
+      'rsa:2048',
+      '-nodes',
+      '-sha256',
+      '-subj', '/CN=localhost',
+      '-keyout', key,
+      '-out', ca,
+    ]);
 
     server = http2.createSecureServer({
-      key: fs.readFileSync(path.join(__dirname, 'fixtures', 'http2-test-certificate', 'localhost-privkey.pem')),
+      key: fs.readFileSync(key),
       cert: fs.readFileSync(ca),
     });
 
@@ -151,6 +166,7 @@ describe('Basic HTTP2 test', async () => {
 
   after(() => {
     server.close();
+    fs.rmSync(temporaryDirectory, { force: true, recursive: true });
   });
 });
 
