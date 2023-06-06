@@ -1,7 +1,7 @@
-curl https://github.com/curl/curl 046209e561b7e9b5aab1aef7daebf29ee6e6e8c7
+curl https://github.com/curl/curl 7ab9d43720bc34d9aa351c7ca683c1668ebf8335
 googletest https://github.com/google/googletest 7a7231c442484be389fdf01594310349ca0e42a8
 nghttp3 https://github.com/ngtcp2/nghttp3 6f29d3e1ae044a8a8f812b7cc4f62acf7c59757c
 nghttp2 https://github.com/nghttp2/nghttp2 be0491294a63d891bd12b6b1b7e372a45a5d0ffe
-ngtcp2 https://github.com/ngtcp2/ngtcp2 61625319ffcb74892da23635bfa04967cbdf1f19
+ngtcp2 https://github.com/ngtcp2/ngtcp2 0ad3c389d48517ac61301ca5c3d63bb295cee0ac
 openssl https://github.com/quictls/openssl 183e548d93a6aeedab0fd6cb737923a93f807b83
 vendorpull https://github.com/sourcemeta/vendorpull 559092d6906d87e5d41d90b47d72e5b75df05a2a

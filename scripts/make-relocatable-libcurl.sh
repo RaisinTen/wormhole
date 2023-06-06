@@ -67,7 +67,7 @@ install_name_tool -id "@rpath/lib/libssl.dylib" "libssl.dylib"
 install_name_tool -change "$PREFIX/lib/libnghttp3.3.dylib" "@loader_path/libnghttp3.dylib" "libcurl.dylib"
 install_name_tool -change "$PREFIX/lib/libnghttp2.14.dylib" "@loader_path/libnghttp2.dylib" "libcurl.dylib"
 install_name_tool -change "$PREFIX/lib/libngtcp2_crypto_openssl.4.dylib" "@loader_path/libngtcp2_crypto_openssl.dylib" "libcurl.dylib"
-install_name_tool -change "$PREFIX/lib/libngtcp2.10.dylib" "@loader_path/libngtcp2.dylib" "libcurl.dylib"
+install_name_tool -change "$PREFIX/lib/libngtcp2.12.dylib" "@loader_path/libngtcp2.dylib" "libcurl.dylib"
 install_name_tool -change "$PREFIX/lib/libssl.81.3.dylib" "@loader_path/libssl.dylib" "libcurl.dylib"
 install_name_tool -change "$PREFIX/lib/libcrypto.81.3.dylib" "@loader_path/libcrypto.dylib" "libcurl.dylib"
 
@@ -76,7 +76,7 @@ install_name_tool -change "$PREFIX/lib/libcrypto.81.3.dylib" "@loader_path/libcr
 # doesn't exist the command doesn't indicate that in anyway.
 
 # Change the dependent shared library install names in libngtcp2_crypto_openssl
-install_name_tool -change "$PREFIX/lib/libngtcp2.10.dylib" "@loader_path/libngtcp2.dylib" "libngtcp2_crypto_openssl.dylib"
+install_name_tool -change "$PREFIX/lib/libngtcp2.12.dylib" "@loader_path/libngtcp2.dylib" "libngtcp2_crypto_openssl.dylib"
 install_name_tool -change "$PREFIX/lib/libssl.81.3.dylib" "@loader_path/libssl.dylib" "libngtcp2_crypto_openssl.dylib"
 install_name_tool -change "$PREFIX/lib/libcrypto.81.3.dylib" "@loader_path/libcrypto.dylib" "libngtcp2_crypto_openssl.dylib"
 

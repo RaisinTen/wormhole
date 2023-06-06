@@ -184,8 +184,6 @@ Client::Client(struct ev_loop *loop, uint32_t client_chosen_version,
       client_chosen_version_(client_chosen_version),
       original_version_(original_version),
       early_data_(false),
-      should_exit_(false),
-      should_exit_on_handshake_confirmed_(false),
       handshake_confirmed_(false),
       tx_{} {
   ev_io_init(&wev_, writecb, 0, EV_WRITE);
@@ -315,9 +313,14 @@ int Client::handshake_completed() {
   }
 
   if (config.tp_file) {
-    auto params = ngtcp2_conn_get_remote_transport_params(conn_);
-
-    if (write_transport_params(config.tp_file, params) != 0) {
+    std::array<uint8_t, 256> data;
+    auto datalen = ngtcp2_conn_encode_early_transport_params(conn_, data.data(),
+                                                             data.size());
+    if (datalen < 0) {
+      std::cerr << "Could not encode early transport parameters: "
+                << ngtcp2_strerror(datalen) << std::endl;
+    } else if (util::write_transport_params(config.tp_file, data.data(),
+                                            datalen) != 0) {
       std::cerr << "Could not write transport parameters in " << config.tp_file
                 << std::endl;
     }
@@ -342,6 +345,16 @@ int handshake_confirmed(ngtcp2_conn *conn, void *user_data) {
 }
 } // namespace
 
+bool Client::should_exit() const {
+  return handshake_confirmed_ &&
+         (!config.wait_for_ticket || ticket_received_) &&
+         ((config.exit_on_first_stream_close &&
+           (config.nstreams == 0 || nstreams_closed_)) ||
+          (config.exit_on_all_streams_close &&
+           config.nstreams == nstreams_done_ &&
+           nstreams_closed_ == nstreams_done_));
+}
+
 int Client::handshake_confirmed() {
   handshake_confirmed_ = true;
 
@@ -353,10 +366,6 @@ int Client::handshake_confirmed() {
   }
   if (config.delay_stream) {
     start_delay_stream_timer();
-  }
-
-  if (should_exit_on_handshake_confirmed_) {
-    should_exit_ = true;
   }
 
   return 0;
@@ -407,7 +416,7 @@ int extend_max_streams_bidi(ngtcp2_conn *conn, uint64_t max_streams,
 
 namespace {
 void rand(uint8_t *dest, size_t destlen, const ngtcp2_rand_ctx *rand_ctx) {
-  auto dis = std::uniform_int_distribution<uint8_t>(0, 255);
+  auto dis = std::uniform_int_distribution<uint8_t>();
   std::generate(dest, dest + destlen, [&dis]() { return dis(randgen); });
 }
 } // namespace
@@ -466,6 +475,7 @@ int update_key(ngtcp2_conn *conn, uint8_t *rx_secret, uint8_t *tx_secret,
 
 namespace {
 int path_validation(ngtcp2_conn *conn, uint32_t flags, const ngtcp2_path *path,
+                    const ngtcp2_path *old_path,
                     ngtcp2_path_validation_result res, void *user_data) {
   if (!config.quiet) {
     debug::path_validation(path, res);
@@ -749,14 +759,18 @@ int Client::init(int fd, const Address &local_addr, const Address &remote_addr,
   ngtcp2_conn_set_tls_native_handle(conn_, tls_session_.get_native_handle());
 
   if (early_data_ && config.tp_file) {
-    ngtcp2_transport_params params;
-    if (read_transport_params(config.tp_file, &params) != 0) {
-      std::cerr << "Could not read transport parameters from " << config.tp_file
-                << std::endl;
+    auto params = util::read_transport_params(config.tp_file);
+    if (!params) {
       early_data_ = false;
     } else {
-      ngtcp2_conn_set_early_remote_transport_params(conn_, &params);
-      if (make_stream_early() != 0) {
+      auto rv = ngtcp2_conn_decode_early_transport_params(
+          conn_, reinterpret_cast<const uint8_t *>(params->data()),
+          params->size());
+      if (rv != 0) {
+        std::cerr << "ngtcp2_conn_decode_early_transport_params: "
+                  << ngtcp2_strerror(rv) << std::endl;
+        early_data_ = false;
+      } else if (make_stream_early() != 0) {
         return -1;
       }
     }
@@ -789,11 +803,10 @@ int Client::feed_data(const Endpoint &ep, const sockaddr *sa, socklen_t salen,
     std::cerr << "ngtcp2_conn_read_pkt: " << ngtcp2_strerror(rv) << std::endl;
     if (!last_error_.error_code) {
       if (rv == NGTCP2_ERR_CRYPTO) {
-        ngtcp2_connection_close_error_set_transport_error_tls_alert(
+        ngtcp2_ccerr_set_tls_alert(
             &last_error_, ngtcp2_conn_get_tls_alert(conn_), nullptr, 0);
       } else {
-        ngtcp2_connection_close_error_set_transport_error_liberr(
-            &last_error_, rv, nullptr, 0);
+        ngtcp2_ccerr_set_liberr(&last_error_, rv, nullptr, 0);
       }
     }
     disconnect();
@@ -859,7 +872,7 @@ int Client::on_read(const Endpoint &ep) {
     }
   }
 
-  if (should_exit_) {
+  if (should_exit()) {
     disconnect();
     return -1;
   }
@@ -874,8 +887,7 @@ int Client::handle_expiry() {
   if (auto rv = ngtcp2_conn_handle_expiry(conn_, now); rv != 0) {
     std::cerr << "ngtcp2_conn_handle_expiry: " << ngtcp2_strerror(rv)
               << std::endl;
-    ngtcp2_connection_close_error_set_transport_error_liberr(&last_error_, rv,
-                                                             nullptr, 0);
+    ngtcp2_ccerr_set_liberr(&last_error_, rv, nullptr, 0);
     disconnect();
     return -1;
   }
@@ -892,13 +904,15 @@ int Client::on_write() {
     if (tx_.send_blocked) {
       return 0;
     }
+
+    ev_io_stop(loop_, &wev_);
   }
 
   if (auto rv = write_streams(); rv != 0) {
     return rv;
   }
 
-  if (should_exit_) {
+  if (should_exit()) {
     disconnect();
     return -1;
   }
@@ -959,8 +973,7 @@ int Client::write_streams() {
 
       std::cerr << "ngtcp2_conn_write_stream: " << ngtcp2_strerror(nwrite)
                 << std::endl;
-      ngtcp2_connection_close_error_set_transport_error_liberr(
-          &last_error_, nwrite, nullptr, 0);
+      ngtcp2_ccerr_set_liberr(&last_error_, nwrite, nullptr, 0);
       disconnect();
       return -1;
     } else if (ndatalen >= 0) {
@@ -973,7 +986,6 @@ int Client::write_streams() {
     if (nwrite == 0) {
       // We are congestion limited.
       ngtcp2_conn_update_pkt_tx_time(conn_, ts);
-      ev_io_stop(loop_, &wev_);
       return 0;
     }
 
@@ -983,8 +995,7 @@ int Client::write_streams() {
             send_packet(ep, ps.path.remote, pi.ecn, tx_.data.data(), nwrite);
         rv != NETWORK_ERR_OK) {
       if (rv != NETWORK_ERR_SEND_BLOCKED) {
-        ngtcp2_connection_close_error_set_transport_error_liberr(
-            &last_error_, NGTCP2_ERR_INTERNAL, nullptr, 0);
+        ngtcp2_ccerr_set_liberr(&last_error_, NGTCP2_ERR_INTERNAL, nullptr, 0);
         disconnect();
 
         return rv;
@@ -998,7 +1009,6 @@ int Client::write_streams() {
 
     if (++pktcnt == max_pktcnt) {
       ngtcp2_conn_update_pkt_tx_time(conn_, ts);
-      start_wev_endpoint(ep);
       return 0;
     }
   }
@@ -1441,13 +1451,10 @@ int Client::send_blocked_packet() {
     if (rv == NETWORK_ERR_SEND_BLOCKED) {
       assert(wev_.fd == tx_.blocked.endpoint->fd);
 
-      ev_io_start(loop_, &wev_);
-
       return 0;
     }
 
-    ngtcp2_connection_close_error_set_transport_error_liberr(
-        &last_error_, NGTCP2_ERR_INTERNAL, nullptr, 0);
+    ngtcp2_ccerr_set_liberr(&last_error_, NGTCP2_ERR_INTERNAL, nullptr, 0);
     disconnect();
 
     return rv;
@@ -1497,16 +1504,6 @@ int Client::on_stream_close(int64_t stream_id, uint64_t app_error_code) {
   sendq_.erase(stream.get());
 
   ++nstreams_closed_;
-
-  if (config.exit_on_first_stream_close ||
-      (config.exit_on_all_streams_close && config.nstreams == nstreams_done_ &&
-       nstreams_closed_ == nstreams_done_)) {
-    if (handshake_confirmed_) {
-      should_exit_ = true;
-    } else {
-      should_exit_on_handshake_confirmed_ = true;
-    }
-  }
 
   if (!ngtcp2_is_bidi_stream(stream_id)) {
     assert(!ngtcp2_conn_is_local_stream(conn_, stream_id));
@@ -1797,7 +1794,7 @@ void config_set_default(Config &config) {
   config.max_streams_uni = 100;
   config.cc_algo = NGTCP2_CC_ALGO_CUBIC;
   config.initial_rtt = NGTCP2_DEFAULT_INITIAL_RTT;
-  config.handshake_timeout = NGTCP2_DEFAULT_HANDSHAKE_TIMEOUT;
+  config.handshake_timeout = UINT64_MAX;
   config.ack_thresh = 2;
 }
 } // namespace
@@ -1948,9 +1945,15 @@ Options:
               Default: )"
             << config.max_streams_uni << R"(
   --exit-on-first-stream-close
-              Exit when a first HTTP stream is closed.
+              Exit  when  a  first  client initiated  HTTP  stream  is
+              closed.
   --exit-on-all-streams-close
-              Exit when all HTTP streams are closed.
+              Exit when all client initiated HTTP streams are closed.
+  --wait-for-ticket
+              Wait  for a  ticket  to be  received  before exiting  on
+              --exit-on-first-stream-close                          or
+              --exit-on-all-streams-close.   --session-file   must  be
+              specified.
   --disable-early-data
               Disable early data.
   --cc=(cubic|reno|bbr|bbr2)
@@ -1982,9 +1985,8 @@ Options:
   --max-udp-payload-size=<SIZE>
               Override maximum UDP payload size that client transmits.
   --handshake-timeout=<DURATION>
-              Set the QUIC handshake timeout.
-              Default: )"
-            << util::format_duration(config.handshake_timeout) << R"(
+              Set  the  QUIC handshake  timeout.   It  defaults to  no
+              timeout.
   --no-pmtud  Disables Path MTU Discovery.
   --ack-thresh=<N>
               The minimum number of the received ACK eliciting packets
@@ -2067,6 +2069,7 @@ int main(int argc, char **argv) {
         {"no-pmtud", no_argument, &flag, 38},
         {"preferred-versions", required_argument, &flag, 39},
         {"ack-thresh", required_argument, &flag, 40},
+        {"wait-for-ticket", no_argument, &flag, 41},
         {nullptr, 0, nullptr, 0},
     };
 
@@ -2466,6 +2469,10 @@ int main(int argc, char **argv) {
           config.ack_thresh = *n;
         }
         break;
+      case 41:
+        // --wait-for-ticket
+        config.wait_for_ticket = true;
+        break;
       }
       break;
     default:
@@ -2488,6 +2495,11 @@ int main(int argc, char **argv) {
     std::cerr << "exit-on-first-stream-close and exit-on-all-streams-close are "
                  "mutually exclusive"
               << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  if (config.wait_for_ticket && !config.session_file) {
+    std::cerr << "wait-for-ticket: session-file must be specified" << std::endl;
     exit(EXIT_FAILURE);
   }
 

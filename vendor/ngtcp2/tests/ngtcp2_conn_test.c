@@ -24,6 +24,7 @@
  */
 #include "ngtcp2_conn_test.h"
 
+#include <stdio.h>
 #include <assert.h>
 
 #include <CUnit/CUnit.h>
@@ -269,13 +270,17 @@ static int recv_client_initial_no_remote_transport_params(
 static int recv_client_initial(ngtcp2_conn *conn, const ngtcp2_cid *dcid,
                                void *user_data) {
   ngtcp2_transport_params params;
+  int rv;
 
   recv_client_initial_no_remote_transport_params(conn, dcid, user_data);
 
   ngtcp2_transport_params_default(&params);
   params.initial_scid = conn->dcid.current.cid;
-  params.original_dcid = conn->rcid;
-  ngtcp2_conn_set_remote_transport_params(conn, &params);
+  params.initial_scid_present = 1;
+
+  rv = ngtcp2_conn_set_remote_transport_params(conn, &params);
+
+  CU_ASSERT(0 == rv);
 
   return 0;
 }
@@ -334,6 +339,85 @@ static int recv_crypto_data_server_early_data(ngtcp2_conn *conn,
   conn->callbacks.recv_crypto_data = recv_crypto_data;
 
   return 0;
+}
+
+static int recv_crypto_data_client_handshake(ngtcp2_conn *conn,
+                                             ngtcp2_crypto_level crypto_level,
+                                             uint64_t offset,
+                                             const uint8_t *data,
+                                             size_t datalen, void *user_data) {
+  int rv;
+  ngtcp2_transport_params params;
+  const ngtcp2_early_transport_params *early_params;
+  ngtcp2_crypto_ctx crypto_ctx;
+  ngtcp2_crypto_aead_ctx aead_ctx = {0};
+  ngtcp2_crypto_cipher_ctx hp_ctx = {0};
+  (void)offset;
+  (void)data;
+  (void)datalen;
+  (void)user_data;
+
+  switch (crypto_level) {
+  case NGTCP2_CRYPTO_LEVEL_INITIAL:
+    init_crypto_ctx(&crypto_ctx);
+    ngtcp2_conn_set_crypto_ctx(conn, &crypto_ctx);
+
+    ngtcp2_conn_install_rx_handshake_key(conn, &aead_ctx, null_iv,
+                                         sizeof(null_iv), &hp_ctx);
+    ngtcp2_conn_install_tx_handshake_key(conn, &aead_ctx, null_iv,
+                                         sizeof(null_iv), &hp_ctx);
+
+    return 0;
+  case NGTCP2_CRYPTO_LEVEL_HANDSHAKE:
+    if (conn->flags & NGTCP2_CONN_FLAG_TLS_HANDSHAKE_COMPLETED) {
+      return 0;
+    }
+
+    early_params = &conn->early.transport_params;
+
+    memset(&params, 0, sizeof(params));
+    ngtcp2_cid_init(&params.initial_scid, conn->dcid.current.cid.data,
+                    conn->dcid.current.cid.datalen);
+    params.initial_scid_present = 1;
+    ngtcp2_cid_init(&params.original_dcid, conn->rcid.data, conn->rcid.datalen);
+    params.original_dcid_present = 1;
+    params.max_udp_payload_size = 1200;
+    params.initial_max_stream_data_bidi_local =
+        early_params->initial_max_stream_data_bidi_local;
+    params.initial_max_stream_data_bidi_remote = ngtcp2_max(
+        100 * 1024, early_params->initial_max_stream_data_bidi_remote);
+    params.initial_max_stream_data_uni =
+        early_params->initial_max_stream_data_uni;
+    params.initial_max_streams_bidi =
+        ngtcp2_max(1, early_params->initial_max_streams_bidi);
+    params.initial_max_streams_uni =
+        ngtcp2_max(1, early_params->initial_max_streams_uni);
+    params.initial_max_data =
+        ngtcp2_max(100 * 1024, early_params->initial_max_data);
+    params.active_connection_id_limit =
+        ngtcp2_max(2, early_params->active_connection_id_limit);
+    params.max_datagram_frame_size = early_params->max_datagram_frame_size;
+
+    rv = ngtcp2_conn_set_remote_transport_params(conn, &params);
+
+    CU_ASSERT(0 == rv);
+
+    ngtcp2_conn_install_rx_key(conn, null_secret, sizeof(null_secret),
+                               &aead_ctx, null_iv, sizeof(null_iv), &hp_ctx);
+    ngtcp2_conn_install_tx_key(conn, null_secret, sizeof(null_secret),
+                               &aead_ctx, null_iv, sizeof(null_iv), &hp_ctx);
+
+    rv = ngtcp2_conn_submit_crypto_data(conn, NGTCP2_CRYPTO_LEVEL_HANDSHAKE,
+                                        null_data, 57);
+
+    CU_ASSERT(0 == rv);
+
+    ngtcp2_conn_tls_handshake_completed(conn);
+
+    return 0;
+  default:
+    return 0;
+  }
 }
 
 static int update_key(ngtcp2_conn *conn, uint8_t *rx_secret, uint8_t *tx_secret,
@@ -546,13 +630,14 @@ static void server_default_settings(ngtcp2_settings *settings) {
   settings->initial_rtt = NGTCP2_DEFAULT_INITIAL_RTT;
   settings->max_tx_udp_payload_size = 2048;
   settings->no_tx_udp_payload_size_shaping = 1;
-  settings->handshake_timeout = NGTCP2_DEFAULT_HANDSHAKE_TIMEOUT;
+  settings->handshake_timeout = 10 * NGTCP2_SECONDS;
 }
 
 static void server_default_transport_params(ngtcp2_transport_params *params) {
   size_t i;
 
   memset(params, 0, sizeof(*params));
+  params->original_dcid_present = 1;
   params->initial_max_stream_data_bidi_local = 65535;
   params->initial_max_stream_data_bidi_remote = 65535;
   params->initial_max_stream_data_uni = 65535;
@@ -688,9 +773,9 @@ setup_default_server_settings(ngtcp2_conn **pconn, const ngtcp2_path *path,
   ngtcp2_conn_install_tx_key(*pconn, null_secret, sizeof(null_secret),
                              &aead_ctx, null_iv, sizeof(null_iv), &hp_ctx);
   (*pconn)->state = NGTCP2_CS_POST_HANDSHAKE;
-  (*pconn)->flags |= NGTCP2_CONN_FLAG_CONN_ID_NEGOTIATED |
+  (*pconn)->flags |= NGTCP2_CONN_FLAG_INITIAL_PKT_PROCESSED |
+                     NGTCP2_CONN_FLAG_TLS_HANDSHAKE_COMPLETED |
                      NGTCP2_CONN_FLAG_HANDSHAKE_COMPLETED |
-                     NGTCP2_CONN_FLAG_HANDSHAKE_COMPLETED_HANDLED |
                      NGTCP2_CONN_FLAG_HANDSHAKE_CONFIRMED;
   (*pconn)->dcid.current.flags |= NGTCP2_DCID_FLAG_PATH_VALIDATED;
   conn_set_scid_used(*pconn);
@@ -753,9 +838,9 @@ static void setup_default_client(ngtcp2_conn **pconn) {
   ngtcp2_conn_install_tx_key(*pconn, null_secret, sizeof(null_secret),
                              &aead_ctx, null_iv, sizeof(null_iv), &hp_ctx);
   (*pconn)->state = NGTCP2_CS_POST_HANDSHAKE;
-  (*pconn)->flags |= NGTCP2_CONN_FLAG_CONN_ID_NEGOTIATED |
+  (*pconn)->flags |= NGTCP2_CONN_FLAG_INITIAL_PKT_PROCESSED |
+                     NGTCP2_CONN_FLAG_TLS_HANDSHAKE_COMPLETED |
                      NGTCP2_CONN_FLAG_HANDSHAKE_COMPLETED |
-                     NGTCP2_CONN_FLAG_HANDSHAKE_COMPLETED_HANDLED |
                      NGTCP2_CONN_FLAG_HANDSHAKE_CONFIRMED;
   (*pconn)->dcid.current.flags |= NGTCP2_DCID_FLAG_PATH_VALIDATED;
   conn_set_scid_used(*pconn);
@@ -902,7 +987,6 @@ static void setup_early_client(ngtcp2_conn **pconn) {
   params.initial_max_streams_uni = 1;
   params.initial_max_data = 64 * 1024;
   params.active_connection_id_limit = 8;
-  params.max_udp_payload_size = NGTCP2_DEFAULT_MAX_RECV_UDP_PAYLOAD_SIZE;
 
   ngtcp2_conn_set_early_remote_transport_params(*pconn, &params);
 }
@@ -4254,7 +4338,7 @@ void test_ngtcp2_conn_recv_early_data(void) {
 
   rv = ngtcp2_conn_read_pkt(conn, &null_path.path, &null_pi, buf, pktlen, ++t);
 
-  CU_ASSERT(NGTCP2_ERR_RETRY == rv);
+  CU_ASSERT(NGTCP2_ERR_DROP_CONN == rv);
 
   ngtcp2_conn_del(conn);
 
@@ -5411,9 +5495,10 @@ void test_ngtcp2_conn_server_path_validation(void) {
   ngtcp2_tstamp t = 900;
   int64_t pkt_num = 0;
   ngtcp2_frame fr;
+  ngtcp2_frame frs[2];
   int rv;
   const uint8_t raw_cid[] = {0x0f, 0x00, 0x00, 0x00};
-  ngtcp2_cid cid, *new_cid;
+  ngtcp2_cid cid, *new_cid, orig_dcid;
   const uint8_t token[NGTCP2_STATELESS_RESET_TOKENLEN] = {0xff};
   ngtcp2_path_storage new_path1, new_path2;
   ngtcp2_ksl_it it;
@@ -5506,6 +5591,153 @@ void test_ngtcp2_conn_server_path_validation(void) {
   CU_ASSERT(0 == rv);
   CU_ASSERT(ngtcp2_path_eq(&new_path2.path, &conn->dcid.current.ps.path));
   CU_ASSERT(ngtcp2_cid_eq(&cid, &conn->dcid.current.cid));
+
+  ngtcp2_conn_del(conn);
+
+  /* Server falls back to the original path if it is unable to verify
+     that path is capable of minimum MTU that QUIC requires. */
+  setup_default_server(&conn);
+
+  /* This will send NEW_CONNECTION_ID frames */
+  spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
+
+  ngtcp2_cid_init(&orig_dcid, conn->dcid.current.cid.data,
+                  conn->dcid.current.cid.datalen);
+
+  CU_ASSERT(spktlen > 0);
+  CU_ASSERT(ngtcp2_ksl_len(&conn->scid.set) > 1);
+
+  fr.type = NGTCP2_FRAME_NEW_CONNECTION_ID;
+  fr.new_connection_id.seq = 1;
+  fr.new_connection_id.retire_prior_to = 0;
+  fr.new_connection_id.cid = cid;
+  memcpy(fr.new_connection_id.stateless_reset_token, token, sizeof(token));
+
+  pktlen = write_pkt(buf, sizeof(buf), &conn->oscid, ++pkt_num, &fr, 1,
+                     conn->pktns.crypto.rx.ckm);
+
+  rv = ngtcp2_conn_read_pkt(conn, &null_path.path, &null_pi, buf, pktlen, ++t);
+
+  CU_ASSERT(0 == rv);
+
+  fr.type = NGTCP2_FRAME_PING;
+
+  it = ngtcp2_ksl_begin(&conn->scid.set);
+
+  assert(!ngtcp2_ksl_it_end(&it));
+
+  new_cid = &(((ngtcp2_scid *)ngtcp2_ksl_it_get(&it))->cid);
+
+  pktlen = write_pkt(buf, sizeof(buf), new_cid, ++pkt_num, &fr, 1,
+                     conn->pktns.crypto.rx.ckm);
+
+  rv = ngtcp2_conn_read_pkt(conn, &new_path.path, &null_pi, buf, pktlen, ++t);
+
+  CU_ASSERT(0 == rv);
+  CU_ASSERT(NULL != conn->pv);
+
+  spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
+
+  CU_ASSERT(spktlen > 0);
+  CU_ASSERT(ngtcp2_ringbuf_len(&conn->pv->ents.rb) > 0);
+
+  fr.type = NGTCP2_FRAME_PATH_RESPONSE;
+  memset(fr.path_response.data, 0, sizeof(fr.path_response.data));
+
+  pktlen = write_pkt(buf, sizeof(buf), new_cid, ++pkt_num, &fr, 1,
+                     conn->pktns.crypto.rx.ckm);
+
+  rv = ngtcp2_conn_read_pkt(conn, &new_path.path, &null_pi, buf, pktlen, ++t);
+
+  CU_ASSERT(0 == rv);
+  CU_ASSERT(ngtcp2_path_eq(&new_path.path, &conn->dcid.current.ps.path));
+  CU_ASSERT(ngtcp2_cid_eq(&cid, &conn->dcid.current.cid));
+
+  /* Server was unable to expand PATH_CHALLENGE due to amplification
+     limit.  Another path validation takes place. */
+  CU_ASSERT(NULL != conn->pv);
+
+  spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
+
+  CU_ASSERT(spktlen >= NGTCP2_MAX_UDP_PAYLOAD_SIZE);
+  CU_ASSERT(ngtcp2_ringbuf_len(&conn->pv->ents.rb) > 0);
+
+  /* path validation failed due to timeout.  Path falls back to the
+     original. */
+  t += conn->pv->timeout;
+
+  spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
+
+  CU_ASSERT(spktlen > 0);
+  CU_ASSERT(NULL == conn->pv);
+  CU_ASSERT(ngtcp2_path_eq(&null_path.path, &conn->dcid.current.ps.path));
+  CU_ASSERT(ngtcp2_cid_eq(&orig_dcid, &conn->dcid.current.cid));
+
+  ngtcp2_conn_del(conn);
+
+  /* Server starts PMTUD after succcessful path validation. */
+  setup_default_server(&conn);
+
+  /* This will send NEW_CONNECTION_ID frames */
+  spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
+
+  CU_ASSERT(spktlen > 0);
+  CU_ASSERT(ngtcp2_ksl_len(&conn->scid.set) > 1);
+
+  fr.type = NGTCP2_FRAME_NEW_CONNECTION_ID;
+  fr.new_connection_id.seq = 1;
+  fr.new_connection_id.retire_prior_to = 0;
+  fr.new_connection_id.cid = cid;
+  memcpy(fr.new_connection_id.stateless_reset_token, token, sizeof(token));
+
+  pktlen = write_pkt(buf, sizeof(buf), &conn->oscid, ++pkt_num, &fr, 1,
+                     conn->pktns.crypto.rx.ckm);
+
+  rv = ngtcp2_conn_read_pkt(conn, &null_path.path, &null_pi, buf, pktlen, ++t);
+
+  CU_ASSERT(0 == rv);
+
+  frs[0].type = NGTCP2_FRAME_PING;
+  frs[1].type = NGTCP2_FRAME_PADDING;
+  frs[1].padding.len = 1200;
+
+  it = ngtcp2_ksl_begin(&conn->scid.set);
+
+  assert(!ngtcp2_ksl_it_end(&it));
+
+  new_cid = &(((ngtcp2_scid *)ngtcp2_ksl_it_get(&it))->cid);
+
+  pktlen = write_pkt(buf, sizeof(buf), new_cid, ++pkt_num, frs, 2,
+                     conn->pktns.crypto.rx.ckm);
+
+  rv = ngtcp2_conn_read_pkt(conn, &new_path.path, &null_pi, buf, pktlen, ++t);
+
+  CU_ASSERT(0 == rv);
+  CU_ASSERT(NULL != conn->pv);
+
+  spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
+
+  CU_ASSERT(spktlen > 0);
+  CU_ASSERT(ngtcp2_ringbuf_len(&conn->pv->ents.rb) > 0);
+  CU_ASSERT(NULL == conn->pmtud);
+
+  fr.type = NGTCP2_FRAME_PATH_RESPONSE;
+  memset(fr.path_response.data, 0, sizeof(fr.path_response.data));
+
+  pktlen = write_pkt(buf, sizeof(buf), new_cid, ++pkt_num, &fr, 1,
+                     conn->pktns.crypto.rx.ckm);
+
+  rv = ngtcp2_conn_read_pkt(conn, &new_path.path, &null_pi, buf, pktlen, ++t);
+
+  CU_ASSERT(0 == rv);
+  CU_ASSERT(ngtcp2_path_eq(&new_path.path, &conn->dcid.current.ps.path));
+  CU_ASSERT(ngtcp2_cid_eq(&cid, &conn->dcid.current.cid));
+
+  /* Server starts path validation against old path. */
+  CU_ASSERT(NULL != conn->pv);
+  CU_ASSERT(!(conn->pv->flags & NGTCP2_PV_FLAG_FALLBACK_ON_FAILURE));
+  CU_ASSERT(conn->pv->flags & NGTCP2_PV_FLAG_DONT_CARE);
+  CU_ASSERT(NULL != conn->pmtud);
 
   ngtcp2_conn_del(conn);
 }
@@ -6096,11 +6328,7 @@ void test_ngtcp2_conn_handshake_loss(void) {
   int64_t pkt_num = -1;
   ngtcp2_ksl_it it;
   ngtcp2_rtb_entry *ent;
-  ngtcp2_crypto_aead_ctx aead_ctx = {0};
-  ngtcp2_crypto_cipher_ctx hp_ctx = {0};
-  ngtcp2_crypto_ctx crypto_ctx;
   int64_t ack_pkt_num;
-  ngtcp2_transport_params params;
   int64_t stream_id;
   ngtcp2_ssize nwrite;
 
@@ -6217,9 +6445,9 @@ void test_ngtcp2_conn_handshake_loss(void) {
 
   ngtcp2_conn_on_loss_detection_timer(conn, t);
 
-  CU_ASSERT(1 == conn->hs_pktns->rtb.probe_pkt_left);
+  CU_ASSERT(2 == conn->hs_pktns->rtb.probe_pkt_left);
 
-  /* Send a PTO probe packet */
+  /* Send 2 PTO probe packets */
   spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
 
   CU_ASSERT(spktlen > 0);
@@ -6233,6 +6461,25 @@ void test_ngtcp2_conn_handshake_loss(void) {
   CU_ASSERT(987 == ngtcp2_vec_len(ent->frc->fr.crypto.data,
                                   ent->frc->fr.crypto.datacnt));
   CU_ASSERT(5 == ent->hd.pkt_num);
+
+  spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
+
+  CU_ASSERT(spktlen > 0);
+
+  it = ngtcp2_ksl_begin(&conn->hs_pktns->rtb.ents);
+  ent = ngtcp2_ksl_it_get(&it);
+
+  CU_ASSERT(NGTCP2_FRAME_CRYPTO == ent->frc->fr.type);
+  CU_ASSERT(987 == ent->frc->fr.crypto.offset);
+  CU_ASSERT(1 == ent->frc->fr.crypto.datacnt);
+  CU_ASSERT(1183 == ngtcp2_vec_len(ent->frc->fr.crypto.data,
+                                   ent->frc->fr.crypto.datacnt));
+
+  CU_ASSERT(6 == ent->hd.pkt_num);
+
+  spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
+
+  CU_ASSERT(0 == spktlen);
 
   ngtcp2_conn_del(conn);
 
@@ -6363,15 +6610,12 @@ void test_ngtcp2_conn_handshake_loss(void) {
 
   ngtcp2_conn_on_loss_detection_timer(conn, t);
 
-  CU_ASSERT(1 == conn->hs_pktns->rtb.probe_pkt_left);
+  CU_ASSERT(2 == conn->hs_pktns->rtb.probe_pkt_left);
 
   /* 3rd PTO */
   spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
 
   CU_ASSERT(spktlen > 0);
-
-  spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
-  CU_ASSERT(0 == spktlen);
 
   it = ngtcp2_ksl_begin(&conn->hs_pktns->rtb.ents);
   ent = ngtcp2_ksl_it_get(&it);
@@ -6383,10 +6627,30 @@ void test_ngtcp2_conn_handshake_loss(void) {
   CU_ASSERT(6 == ent->hd.pkt_num);
   CU_ASSERT(NULL == ent->frc->next);
 
+  spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
+
+  CU_ASSERT(spktlen > 0);
+
+  it = ngtcp2_ksl_begin(&conn->hs_pktns->rtb.ents);
+  ent = ngtcp2_ksl_it_get(&it);
+
+  CU_ASSERT(NGTCP2_FRAME_CRYPTO == ent->frc->fr.type);
+  CU_ASSERT(987 == ent->frc->fr.crypto.offset);
+  CU_ASSERT(991 == ngtcp2_vec_len(ent->frc->fr.crypto.data,
+                                  ent->frc->fr.crypto.datacnt));
+  CU_ASSERT(7 == ent->hd.pkt_num);
+  CU_ASSERT(NULL == ent->frc->next);
+
+  spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
+
+  CU_ASSERT(0 == spktlen);
+
   ngtcp2_conn_del(conn);
 
   /* Allow resending Handshake CRYPTO even if it exceeds CWND */
   setup_handshake_client(&conn);
+
+  conn->callbacks.recv_crypto_data = recv_crypto_data_client_handshake;
 
   t = 0;
   pkt_num = -1;
@@ -6409,13 +6673,6 @@ void test_ngtcp2_conn_handshake_loss(void) {
 
   CU_ASSERT(0 == rv);
 
-  init_crypto_ctx(&crypto_ctx);
-  ngtcp2_conn_set_crypto_ctx(conn, &crypto_ctx);
-  ngtcp2_conn_install_rx_handshake_key(conn, &aead_ctx, null_iv,
-                                       sizeof(null_iv), &hp_ctx);
-  ngtcp2_conn_install_tx_handshake_key(conn, &aead_ctx, null_iv,
-                                       sizeof(null_iv), &hp_ctx);
-
   pktlen = write_handshake_pkt(buf, sizeof(buf), &conn->oscid,
                                ngtcp2_conn_get_dcid(conn), ++pkt_num,
                                conn->client_chosen_version, &fr, 1, &null_ckm);
@@ -6423,31 +6680,6 @@ void test_ngtcp2_conn_handshake_loss(void) {
   rv = ngtcp2_conn_read_pkt(conn, &null_path.path, &null_pi, buf, pktlen, ++t);
 
   CU_ASSERT(0 == rv);
-
-  rv = ngtcp2_conn_submit_crypto_data(conn, NGTCP2_CRYPTO_LEVEL_HANDSHAKE,
-                                      null_data, 57);
-
-  CU_ASSERT(0 == rv);
-
-  memset(&params, 0, sizeof(params));
-  ngtcp2_cid_init(&params.initial_scid, conn->dcid.current.cid.data,
-                  conn->dcid.current.cid.datalen);
-  ngtcp2_cid_init(&params.original_dcid, conn->rcid.data, conn->rcid.datalen);
-  params.max_udp_payload_size = 1200;
-  params.initial_max_stream_data_bidi_remote = 100 * 1024;
-  params.initial_max_data = 100 * 1024;
-  params.initial_max_streams_bidi = 1;
-  params.active_connection_id_limit = 2;
-
-  rv = ngtcp2_conn_set_remote_transport_params(conn, &params);
-
-  CU_ASSERT(0 == rv);
-
-  ngtcp2_conn_install_rx_key(conn, null_secret, sizeof(null_secret), &aead_ctx,
-                             null_iv, sizeof(null_iv), &hp_ctx);
-  ngtcp2_conn_install_tx_key(conn, null_secret, sizeof(null_secret), &aead_ctx,
-                             null_iv, sizeof(null_iv), &hp_ctx);
-  ngtcp2_conn_handshake_completed(conn);
 
   /* This will send Handshake ACK and CRYPTO */
   spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
@@ -6470,12 +6702,18 @@ void test_ngtcp2_conn_handshake_loss(void) {
 
   ngtcp2_conn_on_loss_detection_timer(conn, t);
 
-  CU_ASSERT(1 == conn->hs_pktns->rtb.probe_pkt_left);
+  CU_ASSERT(2 == conn->hs_pktns->rtb.probe_pkt_left);
 
   /* 1st PTO */
+  for (i = 0; i < 2; ++i) {
+    spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
+
+    CU_ASSERT(spktlen > 0);
+  }
+
   spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
 
-  CU_ASSERT(spktlen > 0);
+  CU_ASSERT(0 == spktlen);
 
   /* Send 2 ACKs with PING to declare the latest Handshake CRYPTO to
      be lost */
@@ -6534,6 +6772,71 @@ void test_ngtcp2_conn_handshake_loss(void) {
   spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
 
   CU_ASSERT(spktlen > 0);
+
+  ngtcp2_conn_del(conn);
+}
+
+void test_ngtcp2_conn_probe(void) {
+  ngtcp2_conn *conn;
+  ngtcp2_tstamp t = 0;
+  ngtcp2_ssize spktlen;
+  size_t pktlen;
+  uint8_t buf[1200];
+  ngtcp2_frame fr;
+  int rv;
+  ngtcp2_vec datav;
+  int accepted;
+
+  /* Probe packet after DATAGRAM */
+  setup_default_client(&conn);
+
+  conn->remote.transport_params->max_datagram_frame_size = 65535;
+
+  spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
+
+  CU_ASSERT(spktlen > 0);
+  CU_ASSERT(1 == conn->pktns.rtb.num_ack_eliciting);
+
+  fr.type = NGTCP2_FRAME_ACK;
+  fr.ack.largest_ack = 0;
+  fr.ack.ack_delay = 0;
+  fr.ack.first_ack_range = 0;
+  fr.ack.rangecnt = 0;
+
+  pktlen = write_pkt(buf, sizeof(buf), &conn->oscid, 0, &fr, 1,
+                     conn->pktns.crypto.rx.ckm);
+
+  rv = ngtcp2_conn_read_pkt(conn, &null_path.path, &null_pi, buf, pktlen, t++);
+
+  CU_ASSERT(0 == rv);
+
+  datav.base = null_data;
+  datav.len = 44;
+
+  spktlen = ngtcp2_conn_writev_datagram(
+      conn, NULL, NULL, buf, sizeof(buf), &accepted,
+      NGTCP2_WRITE_DATAGRAM_FLAG_NONE, 1, &datav, 1, t++);
+
+  CU_ASSERT(spktlen > 0);
+  CU_ASSERT(accepted);
+
+  t += 30 * NGTCP2_MILLISECONDS;
+
+  ngtcp2_conn_on_loss_detection_timer(conn, t);
+
+  CU_ASSERT(2 == conn->pktns.rtb.probe_pkt_left);
+
+  spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), t++);
+
+  CU_ASSERT(spktlen > 0);
+
+  spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), t++);
+
+  CU_ASSERT(spktlen > 0);
+
+  spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), t++);
+
+  CU_ASSERT(0 == spktlen);
 
   ngtcp2_conn_del(conn);
 }
@@ -6814,7 +7117,9 @@ void test_ngtcp2_conn_set_remote_transport_params(void) {
   params.active_connection_id_limit = NGTCP2_DEFAULT_ACTIVE_CONNECTION_ID_LIMIT;
   params.max_udp_payload_size = 1450;
   params.initial_scid = conn->dcid.current.cid;
+  params.initial_scid_present = 1;
   params.original_dcid = conn->rcid;
+  params.original_dcid_present = 1;
 
   rv = ngtcp2_conn_set_remote_transport_params(conn, &params);
 
@@ -6831,6 +7136,8 @@ void test_ngtcp2_conn_set_remote_transport_params(void) {
   params.active_connection_id_limit = NGTCP2_DEFAULT_ACTIVE_CONNECTION_ID_LIMIT;
   params.max_udp_payload_size = 1450;
   params.initial_scid = conn->dcid.current.cid;
+  params.initial_scid_present = 1;
+  params.original_dcid_present = 1;
 
   rv = ngtcp2_conn_set_remote_transport_params(conn, &params);
 
@@ -6846,7 +7153,9 @@ void test_ngtcp2_conn_set_remote_transport_params(void) {
   memset(&params, 0, sizeof(params));
   params.active_connection_id_limit = NGTCP2_DEFAULT_ACTIVE_CONNECTION_ID_LIMIT;
   params.max_udp_payload_size = 1450;
+  params.initial_scid_present = 1;
   params.original_dcid = conn->rcid;
+  params.original_dcid_present = 1;
 
   rv = ngtcp2_conn_set_remote_transport_params(conn, &params);
 
@@ -6863,7 +7172,9 @@ void test_ngtcp2_conn_set_remote_transport_params(void) {
   params.active_connection_id_limit = NGTCP2_DEFAULT_ACTIVE_CONNECTION_ID_LIMIT;
   params.max_udp_payload_size = 1450;
   params.initial_scid = conn->dcid.current.cid;
+  params.initial_scid_present = 1;
   params.original_dcid = conn->rcid;
+  params.original_dcid_present = 1;
   params.retry_scid_present = 1;
 
   rv = ngtcp2_conn_set_remote_transport_params(conn, &params);
@@ -6883,7 +7194,9 @@ void test_ngtcp2_conn_set_remote_transport_params(void) {
   params.active_connection_id_limit = NGTCP2_DEFAULT_ACTIVE_CONNECTION_ID_LIMIT;
   params.max_udp_payload_size = 1450;
   params.initial_scid = conn->dcid.current.cid;
+  params.initial_scid_present = 1;
   params.original_dcid = conn->rcid;
+  params.original_dcid_present = 1;
   params.retry_scid_present = 1;
   params.retry_scid = dcid;
 
@@ -6904,7 +7217,9 @@ void test_ngtcp2_conn_set_remote_transport_params(void) {
   params.active_connection_id_limit = NGTCP2_DEFAULT_ACTIVE_CONNECTION_ID_LIMIT;
   params.max_udp_payload_size = 1450;
   params.initial_scid = conn->dcid.current.cid;
+  params.initial_scid_present = 1;
   params.original_dcid = conn->rcid;
+  params.original_dcid_present = 1;
 
   rv = ngtcp2_conn_set_remote_transport_params(conn, &params);
 
@@ -6923,7 +7238,9 @@ void test_ngtcp2_conn_set_remote_transport_params(void) {
   params.active_connection_id_limit = NGTCP2_DEFAULT_ACTIVE_CONNECTION_ID_LIMIT;
   params.max_udp_payload_size = 1450;
   params.initial_scid = conn->dcid.current.cid;
+  params.initial_scid_present = 1;
   params.original_dcid = conn->rcid;
+  params.original_dcid_present = 1;
 
   rv = ngtcp2_conn_set_remote_transport_params(conn, &params);
 
@@ -6941,7 +7258,9 @@ void test_ngtcp2_conn_set_remote_transport_params(void) {
   params.active_connection_id_limit = NGTCP2_DEFAULT_ACTIVE_CONNECTION_ID_LIMIT;
   params.max_udp_payload_size = 1450;
   params.initial_scid = conn->dcid.current.cid;
+  params.initial_scid_present = 1;
   params.original_dcid = conn->rcid;
+  params.original_dcid_present = 1;
 
   rv = ngtcp2_conn_set_remote_transport_params(conn, &params);
 
@@ -6964,7 +7283,9 @@ void test_ngtcp2_conn_set_remote_transport_params(void) {
   params.active_connection_id_limit = NGTCP2_DEFAULT_ACTIVE_CONNECTION_ID_LIMIT;
   params.max_udp_payload_size = 1450;
   params.initial_scid = conn->dcid.current.cid;
+  params.initial_scid_present = 1;
   params.original_dcid = conn->rcid;
+  params.original_dcid_present = 1;
   params.version_info_present = 1;
   params.version_info.chosen_version = conn->negotiated_version;
   params.version_info.available_versions = available_versions;
@@ -6996,7 +7317,9 @@ void test_ngtcp2_conn_set_remote_transport_params(void) {
   params.active_connection_id_limit = NGTCP2_DEFAULT_ACTIVE_CONNECTION_ID_LIMIT;
   params.max_udp_payload_size = 1450;
   params.initial_scid = conn->dcid.current.cid;
+  params.initial_scid_present = 1;
   params.original_dcid = conn->rcid;
+  params.original_dcid_present = 1;
   params.version_info_present = 1;
   params.version_info.chosen_version = conn->negotiated_version;
   params.version_info.available_versions = available_versions;
@@ -7028,7 +7351,9 @@ void test_ngtcp2_conn_set_remote_transport_params(void) {
   params.active_connection_id_limit = NGTCP2_DEFAULT_ACTIVE_CONNECTION_ID_LIMIT;
   params.max_udp_payload_size = 1450;
   params.initial_scid = conn->dcid.current.cid;
+  params.initial_scid_present = 1;
   params.original_dcid = conn->rcid;
+  params.original_dcid_present = 1;
   params.version_info_present = 1;
   params.version_info.chosen_version = conn->negotiated_version;
   params.version_info.available_versions = available_versions;
@@ -7050,7 +7375,7 @@ void test_ngtcp2_conn_write_connection_close(void) {
   ngtcp2_crypto_aead_ctx aead_ctx = {0};
   ngtcp2_crypto_cipher_ctx hp_ctx = {0};
   ngtcp2_crypto_ctx crypto_ctx;
-  ngtcp2_connection_close_error ccerr;
+  ngtcp2_ccerr ccerr;
 
   /* Client only Initial key */
   setup_handshake_client(&conn);
@@ -7059,8 +7384,8 @@ void test_ngtcp2_conn_write_connection_close(void) {
 
   CU_ASSERT(spktlen > 0);
 
-  ngtcp2_connection_close_error_set_transport_error(&ccerr, NGTCP2_NO_ERROR,
-                                                    (const uint8_t *)"foo", 3);
+  ngtcp2_ccerr_set_transport_error(&ccerr, NGTCP2_NO_ERROR,
+                                   (const uint8_t *)"foo", 3);
 
   spktlen = ngtcp2_conn_write_connection_close(conn, NULL, NULL, buf,
                                                sizeof(buf), &ccerr, 0);
@@ -7089,7 +7414,7 @@ void test_ngtcp2_conn_write_connection_close(void) {
   ngtcp2_conn_install_tx_handshake_key(conn, &aead_ctx, null_iv,
                                        sizeof(null_iv), &hp_ctx);
 
-  ngtcp2_connection_close_error_set_transport_error_liberr(&ccerr, 0, NULL, 0);
+  ngtcp2_ccerr_set_liberr(&ccerr, 0, NULL, 0);
 
   spktlen = ngtcp2_conn_write_connection_close(conn, NULL, NULL, buf,
                                                sizeof(buf), &ccerr, 0);
@@ -7119,8 +7444,7 @@ void test_ngtcp2_conn_write_connection_close(void) {
 
   conn->state = NGTCP2_CS_POST_HANDSHAKE;
 
-  ngtcp2_connection_close_error_set_transport_error(&ccerr, NGTCP2_NO_ERROR,
-                                                    NULL, 0);
+  ngtcp2_ccerr_set_transport_error(&ccerr, NGTCP2_NO_ERROR, NULL, 0);
 
   spktlen = ngtcp2_conn_write_connection_close(conn, NULL, NULL, buf,
                                                sizeof(buf), &ccerr, 0);
@@ -7148,8 +7472,7 @@ void test_ngtcp2_conn_write_connection_close(void) {
   /* Client has confirmed handshake */
   setup_default_client(&conn);
 
-  ngtcp2_connection_close_error_set_transport_error(&ccerr, NGTCP2_NO_ERROR,
-                                                    NULL, 0);
+  ngtcp2_ccerr_set_transport_error(&ccerr, NGTCP2_NO_ERROR, NULL, 0);
 
   spktlen = ngtcp2_conn_write_connection_close(conn, NULL, NULL, buf,
                                                sizeof(buf), &ccerr, 0);
@@ -7183,8 +7506,7 @@ void test_ngtcp2_conn_write_connection_close(void) {
   ngtcp2_conn_install_tx_handshake_key(conn, &aead_ctx, null_iv,
                                        sizeof(null_iv), &hp_ctx);
 
-  ngtcp2_connection_close_error_set_transport_error(&ccerr, NGTCP2_NO_ERROR,
-                                                    NULL, 0);
+  ngtcp2_ccerr_set_transport_error(&ccerr, NGTCP2_NO_ERROR, NULL, 0);
 
   spktlen = ngtcp2_conn_write_connection_close(conn, NULL, NULL, buf,
                                                sizeof(buf), &ccerr, 0);
@@ -7232,8 +7554,7 @@ void test_ngtcp2_conn_write_connection_close(void) {
 
   conn->state = NGTCP2_CS_POST_HANDSHAKE;
 
-  ngtcp2_connection_close_error_set_transport_error(&ccerr, NGTCP2_NO_ERROR,
-                                                    NULL, 0);
+  ngtcp2_ccerr_set_transport_error(&ccerr, NGTCP2_NO_ERROR, NULL, 0);
 
   spktlen = ngtcp2_conn_write_connection_close(conn, NULL, NULL, buf,
                                                sizeof(buf), &ccerr, 0);
@@ -7270,8 +7591,7 @@ void test_ngtcp2_conn_write_connection_close(void) {
   /* Server has confirmed handshake */
   setup_default_server(&conn);
 
-  ngtcp2_connection_close_error_set_transport_error(&ccerr, NGTCP2_NO_ERROR,
-                                                    NULL, 0);
+  ngtcp2_ccerr_set_transport_error(&ccerr, NGTCP2_NO_ERROR, NULL, 0);
 
   spktlen = ngtcp2_conn_write_connection_close(conn, NULL, NULL, buf,
                                                sizeof(buf), &ccerr, 0);
@@ -7298,7 +7618,7 @@ void test_ngtcp2_conn_write_application_close(void) {
   ngtcp2_crypto_cipher_ctx hp_ctx = {0};
   uint64_t app_err_code = 0;
   ngtcp2_crypto_ctx crypto_ctx;
-  ngtcp2_connection_close_error ccerr;
+  ngtcp2_ccerr ccerr;
 
   /* Client only Initial key */
   setup_handshake_client(&conn);
@@ -7307,8 +7627,8 @@ void test_ngtcp2_conn_write_application_close(void) {
 
   CU_ASSERT(spktlen > 0);
 
-  ngtcp2_connection_close_error_set_application_error(
-      &ccerr, app_err_code, (const uint8_t *)"foo", 3);
+  ngtcp2_ccerr_set_application_error(&ccerr, app_err_code,
+                                     (const uint8_t *)"foo", 3);
 
   spktlen = ngtcp2_conn_write_connection_close(conn, NULL, NULL, buf,
                                                sizeof(buf), &ccerr, 0);
@@ -7337,8 +7657,7 @@ void test_ngtcp2_conn_write_application_close(void) {
   ngtcp2_conn_install_tx_handshake_key(conn, &aead_ctx, null_iv,
                                        sizeof(null_iv), &hp_ctx);
 
-  ngtcp2_connection_close_error_set_application_error(&ccerr, app_err_code,
-                                                      NULL, 0);
+  ngtcp2_ccerr_set_application_error(&ccerr, app_err_code, NULL, 0);
 
   spktlen = ngtcp2_conn_write_connection_close(conn, NULL, NULL, buf,
                                                sizeof(buf), &ccerr, 0);
@@ -7368,8 +7687,7 @@ void test_ngtcp2_conn_write_application_close(void) {
 
   conn->state = NGTCP2_CS_POST_HANDSHAKE;
 
-  ngtcp2_connection_close_error_set_application_error(&ccerr, app_err_code,
-                                                      NULL, 0);
+  ngtcp2_ccerr_set_application_error(&ccerr, app_err_code, NULL, 0);
 
   spktlen = ngtcp2_conn_write_connection_close(conn, NULL, NULL, buf,
                                                sizeof(buf), &ccerr, 0);
@@ -7397,8 +7715,7 @@ void test_ngtcp2_conn_write_application_close(void) {
   /* Client has confirmed handshake */
   setup_default_client(&conn);
 
-  ngtcp2_connection_close_error_set_application_error(&ccerr, app_err_code,
-                                                      NULL, 0);
+  ngtcp2_ccerr_set_application_error(&ccerr, app_err_code, NULL, 0);
 
   spktlen = ngtcp2_conn_write_connection_close(conn, NULL, NULL, buf,
                                                sizeof(buf), &ccerr, 0);
@@ -7432,8 +7749,7 @@ void test_ngtcp2_conn_write_application_close(void) {
   ngtcp2_conn_install_tx_handshake_key(conn, &aead_ctx, null_iv,
                                        sizeof(null_iv), &hp_ctx);
 
-  ngtcp2_connection_close_error_set_application_error(&ccerr, app_err_code,
-                                                      NULL, 0);
+  ngtcp2_ccerr_set_application_error(&ccerr, app_err_code, NULL, 0);
 
   spktlen = ngtcp2_conn_write_connection_close(conn, NULL, NULL, buf,
                                                sizeof(buf), &ccerr, 0);
@@ -7479,8 +7795,7 @@ void test_ngtcp2_conn_write_application_close(void) {
   ngtcp2_conn_install_tx_key(conn, null_secret, sizeof(null_secret), &aead_ctx,
                              null_iv, sizeof(null_iv), &hp_ctx);
 
-  ngtcp2_connection_close_error_set_application_error(&ccerr, app_err_code,
-                                                      NULL, 0);
+  ngtcp2_ccerr_set_application_error(&ccerr, app_err_code, NULL, 0);
 
   spktlen = ngtcp2_conn_write_connection_close(conn, NULL, NULL, buf,
                                                sizeof(buf), &ccerr, 0);
@@ -7517,8 +7832,7 @@ void test_ngtcp2_conn_write_application_close(void) {
   /* Server has confirmed handshake */
   setup_default_server(&conn);
 
-  ngtcp2_connection_close_error_set_application_error(&ccerr, app_err_code,
-                                                      NULL, 0);
+  ngtcp2_ccerr_set_application_error(&ccerr, app_err_code, NULL, 0);
 
   spktlen = ngtcp2_conn_write_connection_close(conn, NULL, NULL, buf,
                                                sizeof(buf), &ccerr, 0);
@@ -8006,7 +8320,6 @@ void test_ngtcp2_conn_path_validation(void) {
 
   CU_ASSERT(ent->flags & NGTCP2_PV_ENTRY_FLAG_UNDERSIZED);
   CU_ASSERT(conn->pv->flags & NGTCP2_PV_FLAG_FALLBACK_ON_FAILURE);
-  CU_ASSERT(!(conn->pv->flags & NGTCP2_PV_FLAG_MTU_PROBE));
 
   frs[0].type = NGTCP2_FRAME_PATH_RESPONSE;
   memcpy(frs[0].path_response.data, ent->data, sizeof(ent->data));
@@ -8020,7 +8333,6 @@ void test_ngtcp2_conn_path_validation(void) {
   /* Start another path validation to probe least MTU */
   CU_ASSERT(NULL != conn->pv);
   CU_ASSERT(conn->pv->flags & NGTCP2_PV_FLAG_FALLBACK_ON_FAILURE);
-  CU_ASSERT(conn->pv->flags & NGTCP2_PV_FLAG_MTU_PROBE);
 
   ngtcp2_path_storage_zero(&wpath);
   spktlen =
@@ -8043,7 +8355,6 @@ void test_ngtcp2_conn_path_validation(void) {
   /* Now perform another validation to old path */
   CU_ASSERT(NULL != conn->pv);
   CU_ASSERT(!(conn->pv->flags & NGTCP2_PV_FLAG_FALLBACK_ON_FAILURE));
-  CU_ASSERT(!(conn->pv->flags & NGTCP2_PV_FLAG_MTU_PROBE));
   CU_ASSERT(conn->pv->flags & NGTCP2_PV_FLAG_DONT_CARE);
 
   ngtcp2_path_storage_zero(&wpath);
@@ -8066,13 +8377,12 @@ void test_ngtcp2_conn_early_data_sync_stream_data_limit(void) {
   int rv;
   ngtcp2_frame fr;
   size_t pktlen;
-  ngtcp2_crypto_aead_ctx aead_ctx = {0};
-  ngtcp2_crypto_cipher_ctx hp_ctx = {0};
-  ngtcp2_transport_params params;
   ngtcp2_strm *strm;
   ngtcp2_tstamp t = 0;
 
   setup_early_client(&conn);
+
+  conn->callbacks.recv_crypto_data = recv_crypto_data_client_handshake;
 
   rv = ngtcp2_conn_open_bidi_stream(conn, &bidi_stream_id, NULL);
 
@@ -8110,59 +8420,29 @@ void test_ngtcp2_conn_early_data_sync_stream_data_limit(void) {
 
   CU_ASSERT(0 == rv);
 
-  rv = ngtcp2_conn_install_rx_handshake_key(conn, &aead_ctx, null_iv,
-                                            sizeof(null_iv), &hp_ctx);
+  pktlen = write_handshake_pkt(buf, sizeof(buf), &conn->oscid,
+                               ngtcp2_conn_get_dcid(conn), 0,
+                               NGTCP2_PROTO_VER_V1, &fr, 1, &null_ckm);
+
+  rv = ngtcp2_conn_read_pkt(conn, &null_path.path, &null_pi, buf, pktlen, ++t);
 
   CU_ASSERT(0 == rv);
 
-  rv = ngtcp2_conn_install_tx_handshake_key(conn, &aead_ctx, null_iv,
-                                            sizeof(null_iv), &hp_ctx);
-
-  CU_ASSERT(0 == rv);
-
-  rv = ngtcp2_conn_install_rx_key(conn, null_secret, sizeof(null_secret),
-                                  &aead_ctx, null_iv, sizeof(null_iv), &hp_ctx);
-
-  CU_ASSERT(0 == rv);
-
-  memset(&params, 0, sizeof(params));
-  ngtcp2_cid_init(&params.initial_scid, conn->dcid.current.cid.data,
-                  conn->dcid.current.cid.datalen);
-  ngtcp2_cid_init(&params.original_dcid, conn->rcid.data, conn->rcid.datalen);
-  params.max_udp_payload_size = 1200;
-  params.initial_max_stream_data_bidi_local =
-      conn->early.transport_params.initial_max_stream_data_bidi_local;
-  params.initial_max_stream_data_bidi_remote = 640 * 1024;
-  params.initial_max_stream_data_uni = 320 * 1024;
-  params.initial_max_data = conn->early.transport_params.initial_max_data;
-  params.initial_max_streams_bidi =
-      conn->early.transport_params.initial_max_streams_bidi;
-  params.initial_max_streams_uni =
-      conn->early.transport_params.initial_max_streams_uni;
-  params.active_connection_id_limit =
-      conn->early.transport_params.active_connection_id_limit;
-
-  rv = ngtcp2_conn_set_remote_transport_params(conn, &params);
-
-  CU_ASSERT(0 == rv);
-
-  rv = ngtcp2_conn_install_tx_key(conn, null_secret, sizeof(null_secret),
-                                  &aead_ctx, null_iv, sizeof(null_iv), &hp_ctx);
-
-  CU_ASSERT(0 == rv);
-
-  ngtcp2_conn_handshake_completed(conn);
   spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
 
   CU_ASSERT(0 < spktlen);
+  CU_ASSERT(ngtcp2_conn_get_handshake_completed(conn));
 
   strm = ngtcp2_conn_find_stream(conn, bidi_stream_id);
 
-  CU_ASSERT(params.initial_max_stream_data_bidi_remote == strm->tx.max_offset);
+  CU_ASSERT(
+      conn->remote.transport_params->initial_max_stream_data_bidi_remote ==
+      strm->tx.max_offset);
 
   strm = ngtcp2_conn_find_stream(conn, uni_stream_id);
 
-  CU_ASSERT(params.initial_max_stream_data_uni == strm->tx.max_offset);
+  CU_ASSERT(conn->remote.transport_params->initial_max_stream_data_uni ==
+            strm->tx.max_offset);
 
   ngtcp2_conn_del(conn);
 }
@@ -8253,7 +8533,9 @@ void test_ngtcp2_conn_early_data_rejected(void) {
   memset(&params, 0, sizeof(params));
   ngtcp2_cid_init(&params.initial_scid, conn->dcid.current.cid.data,
                   conn->dcid.current.cid.datalen);
+  params.initial_scid_present = 1;
   ngtcp2_cid_init(&params.original_dcid, conn->rcid.data, conn->rcid.datalen);
+  params.original_dcid_present = 1;
   params.max_udp_payload_size = 1200;
   params.initial_max_stream_data_bidi_local =
       conn->early.transport_params.initial_max_stream_data_bidi_local;
@@ -8277,7 +8559,7 @@ void test_ngtcp2_conn_early_data_rejected(void) {
 
   CU_ASSERT(0 == rv);
 
-  ngtcp2_conn_handshake_completed(conn);
+  ngtcp2_conn_tls_handshake_completed(conn);
   ngtcp2_conn_early_data_rejected(conn);
   spktlen = ngtcp2_conn_write_pkt(conn, NULL, NULL, buf, sizeof(buf), ++t);
 
@@ -8846,7 +9128,7 @@ void test_ngtcp2_conn_handshake_timeout(void) {
   ngtcp2_conn_del(conn);
 }
 
-void test_ngtcp2_conn_get_connection_close_error(void) {
+void test_ngtcp2_conn_get_ccerr(void) {
   ngtcp2_conn *conn;
   uint8_t buf[2048];
   ngtcp2_frame frs[2];
@@ -8855,7 +9137,7 @@ void test_ngtcp2_conn_get_connection_close_error(void) {
   ngtcp2_tstamp t = 0;
   int64_t pkt_num = 0;
   int rv;
-  ngtcp2_connection_close_error ccerr;
+  const ngtcp2_ccerr *ccerr;
 
   memset(reason, 'a', sizeof(reason));
 
@@ -8871,8 +9153,7 @@ void test_ngtcp2_conn_get_connection_close_error(void) {
   frs[1].type = NGTCP2_FRAME_CONNECTION_CLOSE;
   frs[1].connection_close.error_code = NGTCP2_PROTOCOL_VIOLATION;
   frs[1].connection_close.frame_type = 1000000007;
-  frs[1].connection_close.reasonlen =
-      NGTCP2_CONNECTION_CLOSE_ERROR_MAX_REASONLEN + 1;
+  frs[1].connection_close.reasonlen = NGTCP2_CCERR_MAX_REASONLEN + 1;
   frs[1].connection_close.reason = reason;
 
   pktlen = write_pkt(buf, sizeof(buf), &conn->oscid, ++pkt_num, frs,
@@ -8882,13 +9163,13 @@ void test_ngtcp2_conn_get_connection_close_error(void) {
 
   CU_ASSERT(NGTCP2_ERR_DRAINING == rv);
 
-  ngtcp2_conn_get_connection_close_error(conn, &ccerr);
+  ccerr = ngtcp2_conn_get_ccerr(conn);
 
-  CU_ASSERT(NGTCP2_PROTOCOL_VIOLATION == ccerr.error_code);
-  CU_ASSERT(NGTCP2_CONNECTION_CLOSE_ERROR_CODE_TYPE_TRANSPORT == ccerr.type);
-  CU_ASSERT(1000000007 == ccerr.frame_type);
-  CU_ASSERT(0 == memcmp(reason, ccerr.reason, ccerr.reasonlen));
-  CU_ASSERT(NGTCP2_CONNECTION_CLOSE_ERROR_MAX_REASONLEN == ccerr.reasonlen);
+  CU_ASSERT(NGTCP2_PROTOCOL_VIOLATION == ccerr->error_code);
+  CU_ASSERT(NGTCP2_CCERR_TYPE_TRANSPORT == ccerr->type);
+  CU_ASSERT(1000000007 == ccerr->frame_type);
+  CU_ASSERT(0 == memcmp(reason, ccerr->reason, ccerr->reasonlen));
+  CU_ASSERT(NGTCP2_CCERR_MAX_REASONLEN == ccerr->reasonlen);
 
   ngtcp2_conn_del(conn);
 }
@@ -8996,6 +9277,7 @@ void test_ngtcp2_conn_version_negotiation(void) {
   ngtcp2_transport_params_default(&remote_params);
   ngtcp2_cid_init(&remote_params.initial_scid, conn->dcid.current.cid.data,
                   conn->dcid.current.cid.datalen);
+  remote_params.initial_scid_present = 1;
   remote_params.version_info_present = 1;
   remote_params.version_info.chosen_version = NGTCP2_PROTO_VER_V1;
   remote_params.version_info.available_versions = available_versions;
@@ -9043,6 +9325,7 @@ void test_ngtcp2_conn_version_negotiation(void) {
   ngtcp2_transport_params_default(&remote_params);
   ngtcp2_cid_init(&remote_params.initial_scid, conn->dcid.current.cid.data,
                   conn->dcid.current.cid.datalen);
+  remote_params.initial_scid_present = 1;
   remote_params.version_info_present = 1;
   remote_params.version_info.chosen_version = NGTCP2_PROTO_VER_V1;
   remote_params.version_info.available_versions =
@@ -9235,6 +9518,109 @@ void test_ngtcp2_conn_amplification(void) {
   ngtcp2_conn_del(conn);
 }
 
+void test_ngtcp2_conn_encode_early_transport_params(void) {
+  ngtcp2_conn *conn;
+  uint8_t buf[256];
+  ngtcp2_ssize slen;
+  ngtcp2_transport_params params, early_params;
+  ngtcp2_callbacks cb;
+  ngtcp2_settings settings;
+  ngtcp2_cid rcid, scid;
+  ngtcp2_crypto_aead_ctx aead_ctx = {0};
+  ngtcp2_crypto_cipher_ctx hp_ctx = {0};
+  ngtcp2_crypto_ctx crypto_ctx;
+  int rv;
+
+  /* client side */
+  setup_default_client(&conn);
+
+  slen = ngtcp2_conn_encode_early_transport_params(conn, buf, sizeof(buf));
+
+  CU_ASSERT(slen > 0);
+
+  rv = ngtcp2_transport_params_decode(&early_params, buf, (size_t)slen);
+
+  CU_ASSERT(0 == rv);
+  CU_ASSERT(1 == early_params.initial_max_streams_bidi);
+  CU_ASSERT(1 == early_params.initial_max_streams_uni);
+  CU_ASSERT(64 * 1024 == early_params.initial_max_stream_data_bidi_local);
+  CU_ASSERT(64 * 1024 == early_params.initial_max_stream_data_bidi_remote);
+  CU_ASSERT(64 * 1024 == early_params.initial_max_stream_data_uni);
+  CU_ASSERT(64 * 1024 == early_params.initial_max_data);
+  CU_ASSERT(8 == early_params.active_connection_id_limit);
+
+  ngtcp2_conn_del(conn);
+
+  rcid_init(&rcid);
+  scid_init(&scid);
+
+  init_initial_crypto_ctx(&crypto_ctx);
+
+  client_early_callbacks(&cb);
+  client_default_settings(&settings);
+  client_default_transport_params(&params);
+
+  ngtcp2_conn_client_new(&conn, &rcid, &scid, &null_path.path,
+                         NGTCP2_PROTO_VER_V1, &cb, &settings, &params,
+                         /* mem = */ NULL, NULL);
+  ngtcp2_conn_set_initial_crypto_ctx(conn, &crypto_ctx);
+  ngtcp2_conn_install_initial_key(conn, &aead_ctx, null_iv, &hp_ctx, &aead_ctx,
+                                  null_iv, &hp_ctx, sizeof(null_iv));
+
+  rv = ngtcp2_conn_decode_early_transport_params(conn, buf, (size_t)slen);
+
+  CU_ASSERT(0 == rv);
+  CU_ASSERT(early_params.initial_max_streams_bidi ==
+            conn->remote.transport_params->initial_max_streams_bidi);
+  CU_ASSERT(early_params.initial_max_streams_uni ==
+            conn->remote.transport_params->initial_max_streams_uni);
+  CU_ASSERT(early_params.initial_max_stream_data_bidi_local ==
+            conn->remote.transport_params->initial_max_stream_data_bidi_local);
+  CU_ASSERT(early_params.initial_max_stream_data_bidi_remote ==
+            conn->remote.transport_params->initial_max_stream_data_bidi_remote);
+  CU_ASSERT(early_params.initial_max_stream_data_uni ==
+            conn->remote.transport_params->initial_max_stream_data_uni);
+  CU_ASSERT(early_params.initial_max_data ==
+            conn->remote.transport_params->initial_max_data);
+  CU_ASSERT(early_params.active_connection_id_limit ==
+            conn->remote.transport_params->active_connection_id_limit);
+
+  ngtcp2_conn_del(conn);
+
+  /* server side */
+  server_default_settings(&settings);
+  server_default_transport_params(&params);
+  params.disable_active_migration = 1;
+  setup_default_server_settings(&conn, &null_path.path, &settings, &params);
+
+  slen = ngtcp2_conn_encode_early_transport_params(conn, buf, sizeof(buf));
+
+  CU_ASSERT(slen > 0);
+
+  rv = ngtcp2_transport_params_decode(&early_params, buf, (size_t)slen);
+
+  CU_ASSERT(0 == rv);
+  CU_ASSERT(params.initial_max_streams_bidi ==
+            early_params.initial_max_streams_bidi);
+  CU_ASSERT(params.initial_max_streams_uni ==
+            early_params.initial_max_streams_uni);
+  CU_ASSERT(params.initial_max_stream_data_bidi_local ==
+            early_params.initial_max_stream_data_bidi_local);
+  CU_ASSERT(params.initial_max_stream_data_bidi_remote ==
+            early_params.initial_max_stream_data_bidi_remote);
+  CU_ASSERT(params.initial_max_stream_data_uni ==
+            early_params.initial_max_stream_data_uni);
+  CU_ASSERT(params.initial_max_data == early_params.initial_max_data);
+  CU_ASSERT(params.active_connection_id_limit ==
+            early_params.active_connection_id_limit);
+  CU_ASSERT(params.max_idle_timeout == early_params.max_idle_timeout);
+  CU_ASSERT(params.max_udp_payload_size == early_params.max_udp_payload_size);
+  CU_ASSERT(params.disable_active_migration ==
+            early_params.disable_active_migration);
+
+  ngtcp2_conn_del(conn);
+}
+
 typedef struct failmalloc {
   size_t nmalloc;
   size_t fail_start;
@@ -9319,6 +9705,9 @@ void test_ngtcp2_conn_new_failmalloc(void) {
   settings.available_versions = available_versions;
   settings.available_versionslen = ngtcp2_arraylen(available_versions);
 
+  params.original_dcid = dcid;
+  params.original_dcid_present = 1;
+
   /* server */
   server_default_callbacks(&cb);
 
@@ -9358,6 +9747,8 @@ void test_ngtcp2_conn_new_failmalloc(void) {
   ngtcp2_conn_del(conn);
 
   /* client */
+  ngtcp2_transport_params_default(&params);
+
   client_default_callbacks(&cb);
 
   mc.nmalloc = 0;
@@ -9451,14 +9842,7 @@ void test_ngtcp2_accept(void) {
 
   rv = ngtcp2_accept(&hd, buf, pktlen);
 
-  CU_ASSERT(NGTCP2_ERR_RETRY == rv);
-  CU_ASSERT(ngtcp2_cid_eq(&dcid, &hd.dcid));
-  CU_ASSERT(ngtcp2_cid_eq(&scid, &hd.scid));
-  CU_ASSERT(0 == hd.tokenlen);
-  CU_ASSERT(hd.len > 0);
-  CU_ASSERT(NGTCP2_PROTO_VER_V1 == hd.version);
-  CU_ASSERT(NGTCP2_PKT_0RTT == hd.type);
-  CU_ASSERT(hd.flags & NGTCP2_PKT_FLAG_LONG_FORM);
+  CU_ASSERT(NGTCP2_ERR_INVALID_ARGUMENT == rv);
 
   /* Unknown version */
   memset(&hd, 0, sizeof(hd));

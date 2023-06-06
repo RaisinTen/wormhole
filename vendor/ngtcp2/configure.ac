@@ -22,7 +22,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 AC_PREREQ(2.61)
-AC_INIT([ngtcp2], [0.13.1], [t-tujikawa@users.sourceforge.net])
+AC_INIT([ngtcp2], [0.15.0], [t-tujikawa@users.sourceforge.net])
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config.h])
@@ -41,20 +41,20 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 # See versioning rule:
 #  https://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
-AC_SUBST(LT_CURRENT, 10)
-AC_SUBST(LT_REVISION, 1)
+AC_SUBST(LT_CURRENT, 12)
+AC_SUBST(LT_REVISION, 0)
 AC_SUBST(LT_AGE, 0)
 
 AC_SUBST(CRYPTO_OPENSSL_LT_CURRENT, 4)
-AC_SUBST(CRYPTO_OPENSSL_LT_REVISION, 0)
+AC_SUBST(CRYPTO_OPENSSL_LT_REVISION, 1)
 AC_SUBST(CRYPTO_OPENSSL_LT_AGE, 0)
 
 AC_SUBST(CRYPTO_GNUTLS_LT_CURRENT, 4)
-AC_SUBST(CRYPTO_GNUTLS_LT_REVISION, 0)
+AC_SUBST(CRYPTO_GNUTLS_LT_REVISION, 1)
 AC_SUBST(CRYPTO_GNUTLS_LT_AGE, 0)
 
 AC_SUBST(CRYPTO_WOLFSSL_LT_CURRENT, 1)
-AC_SUBST(CRYPTO_WOLFSSL_LT_REVISION, 0)
+AC_SUBST(CRYPTO_WOLFSSL_LT_REVISION, 1)
 AC_SUBST(CRYPTO_WOLFSSL_LT_AGE, 0)
 
 # from nghttp2
@@ -387,7 +387,7 @@ AM_CONDITIONAL([HAVE_CRYPTO], [ test "x${have_crypto}" = "xyes" ])
 # libnghttp3 (required for examples)
 have_libnghttp3=no
 if test "x${request_libnghttp3}" != "xno"; then
-  PKG_CHECK_MODULES([LIBNGHTTP3], [libnghttp3 >= 0.2.0],
+  PKG_CHECK_MODULES([LIBNGHTTP3], [libnghttp3 >= 0.11.0],
                     [have_libnghttp3=yes], [have_libnghttp3=no])
   if test "${have_libnghttp3}" = "xno"; then
     AC_MSG_NOTICE($LIBNGHTTP3_PKG_ERRORS)
