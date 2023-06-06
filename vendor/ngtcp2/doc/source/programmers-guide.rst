@@ -121,9 +121,11 @@ value.  It could be any timestamp which increases monotonically, and
 actual value does not matter.
 
 :type:`ngtcp2_transport_params` contains QUIC transport parameters
-which is sent to a remote endpoint during handshake.  All fields must
-be set.  Application should call `ngtcp2_transport_params_default()`
-to set the default values.
+which is sent to a remote endpoint during handshake.  Application
+should call `ngtcp2_transport_params_default()` to set the default
+values.  Server must set
+:member:`ngtcp2_transport_params.original_dcid` and set
+:member:`ngtcp2_transport_params.original_dcid_present` to nonzero.
 
 Client application has to supply Connection IDs to
 `ngtcp2_conn_client_new()`.  The *dcid* parameter is the destination
@@ -224,7 +226,24 @@ order to write QUIC packets, call `ngtcp2_conn_writev_stream()` or
 the value returned from `ngtcp2_conn_get_max_tx_udp_payload_size()`.
 
 In order to send stream data, the application has to first open a
-stream.  Use `ngtcp2_conn_open_bidi_stream()` to open bidirectional
+stream.  In earliest, clients can open streams after installing 1RTT
+RX(decryption) key, which is notified by
+:member:`ngtcp2_callbacks.recv_rx_key`.  Because the key is installed
+just before handshake completion, handshake completion (see
+:member:`ngtcp2_callbacks.handshake_completed`) is also a good signal
+to start opening streams.  For convenience,
+:member:`ngtcp2_callbacks.extend_max_local_streams_bidi` and
+:member:`ngtcp2_callbacks.extend_max_local_streams_uni` are called
+right after :member:`ngtcp2_callbacks.handshake_completed` callback if
+there are streams IDs available.
+
+For server, it can open streams after installing 1RTT TX(encryption)
+key, which is notified by :member:`ngtcp2_callbacks.recv_tx_key`.
+Note that handshake is not authenticated until handshake completes.
+Therefore, it is a good practice to send important data after
+handshake completion.
+
+Use `ngtcp2_conn_open_bidi_stream()` to open bidirectional
 stream.  For unidirectional stream, call
 `ngtcp2_conn_open_uni_stream()`.  Call `ngtcp2_conn_writev_stream()`
 to send stream data.
@@ -253,11 +272,9 @@ tables by Destination Connection ID (refer to the next section to know
 how to associate Connection ID to a :type:`ngtcp2_conn`).  If it
 belongs to an existing connection, pass the UDP datagram to
 `ngtcp2_conn_read_pkt()`.  If it does not belong to any existing
-connection, it should be passed to `ngtcp2_accept()`.  If it returns
-:macro:`NGTCP2_ERR_RETRY`, the server should send Retry packet (use
-`ngtcp2_crypto_write_retry()` to create Retry packet).  If it returns
-an other negative error code, just drop the packet to the floor and
-take no action, or send Stateless Reset packet (use
+connection, it should be passed to `ngtcp2_accept()`.  If it returns a
+negative error code, just drop the packet to the floor and take no
+action, or send Stateless Reset packet (use
 `ngtcp2_pkt_write_stateless_reset()` to create Stateless Reset
 packet).  Otherwise, the UDP datagram is acceptable as a new
 connection.  Create :type:`ngtcp2_conn` object and pass the UDP
@@ -294,9 +311,17 @@ ID which can be obtained by calling
 Dealing with early data
 -----------------------
 
-Client application has to load resumed TLS session.  It also has to
-set the remembered transport parameters using
-`ngtcp2_conn_set_early_remote_transport_params()` function.
+Client application has to remember the subset of the QUIC transport
+parameters received from a server in the previous connection.
+`ngtcp2_conn_encode_early_transport_params` returns the encoded QUIC
+transport parameters that include these values.  When sending early
+data, the remembered transport parameters should be set via
+`ngtcp2_conn_decode_early_transport_params`.  Then client can open
+streams with `ngtcp2_conn_open_bidi_streams` or
+`ngtcp2_conn_open_uni_stream`.  Note that
+`ngtcp2_conn_decode_early_transport_params` does not invoke neither
+:member:`ngtcp2_callbacks.extend_max_local_streams_bidi` nor
+:member:`ngtcp2_callbacks.extend_max_local_streams_uni`.
 
 Other than that, there is no difference between early data and 1RTT
 data in terms of API usage.
@@ -308,8 +333,24 @@ retransmit early data to server as 1RTT data.  If an application
 wishes to resend data, it has to reopen streams and writes data again.
 See `ngtcp2_conn_early_data_rejected`.
 
+Closing streams
+---------------
+
+The send-side stream is closed when you call
+`ngtcp2_conn_writev_stream` with :macro:`NGTCP2_WRITE_STREAM_FLAG_FIN`
+flag set, and all data are acknowledged.  The receive-side stream is
+closed when a local endpoint receives fin from a remote endpoint, and
+all data are received.  And then
+:member:`ngtcp2_callbacks.stream_close` is invoked.
+
+Application can close stream abruptly by calling
+`ngtcp2_conn_shutdown_stream`.  It has
+`ngtcp2_conn_shutdown_stream_write` and
+`ngtcp2_conn_shutdown_stream_read` variants that close the individual
+side of a stream.
+
 Stream data ownership
---------------------------------
+---------------------
 
 Stream data passed to :type:`ngtcp2_conn` must be held by application
 until :member:`ngtcp2_callbacks.acked_stream_data_offset` callbacks is

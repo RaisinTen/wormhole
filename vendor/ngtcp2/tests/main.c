@@ -49,6 +49,7 @@
 #include "ngtcp2_pv_test.h"
 #include "ngtcp2_pmtud_test.h"
 #include "ngtcp2_str_test.h"
+#include "ngtcp2_conversion_test.h"
 
 static int init_suite1(void) { return 0; }
 
@@ -174,10 +175,10 @@ int main(void) {
       !CU_add_test(pSuite, "acktr_eviction", test_ngtcp2_acktr_eviction) ||
       !CU_add_test(pSuite, "acktr_forget", test_ngtcp2_acktr_forget) ||
       !CU_add_test(pSuite, "acktr_recv_ack", test_ngtcp2_acktr_recv_ack) ||
-      !CU_add_test(pSuite, "encode_transport_params",
-                   test_ngtcp2_encode_transport_params) ||
-      !CU_add_test(pSuite, "decode_transport_params_new",
-                   test_ngtcp2_decode_transport_params_new) ||
+      !CU_add_test(pSuite, "transport_params_encode",
+                   test_ngtcp2_transport_params_encode) ||
+      !CU_add_test(pSuite, "transport_params_decode_new",
+                   test_ngtcp2_transport_params_decode_new) ||
       !CU_add_test(pSuite, "rtb_add", test_ngtcp2_rtb_add) ||
       !CU_add_test(pSuite, "rtb_recv_ack", test_ngtcp2_rtb_recv_ack) ||
       !CU_add_test(pSuite, "rtb_lost_pkt_ts", test_ngtcp2_rtb_lost_pkt_ts) ||
@@ -264,6 +265,7 @@ int main(void) {
                    test_ngtcp2_conn_handshake_probe) ||
       !CU_add_test(pSuite, "conn_handshake_loss",
                    test_ngtcp2_conn_handshake_loss) ||
+      !CU_add_test(pSuite, "conn_probe", test_ngtcp2_conn_probe) ||
       !CU_add_test(pSuite, "conn_recv_client_initial_retry",
                    test_ngtcp2_conn_recv_client_initial_retry) ||
       !CU_add_test(pSuite, "conn_recv_client_initial_token",
@@ -301,8 +303,7 @@ int main(void) {
       !CU_add_test(pSuite, "conn_buffer_pkt", test_ngtcp2_conn_buffer_pkt) ||
       !CU_add_test(pSuite, "conn_handshake_timeout",
                    test_ngtcp2_conn_handshake_timeout) ||
-      !CU_add_test(pSuite, "conn_get_connection_close_error",
-                   test_ngtcp2_conn_get_connection_close_error) ||
+      !CU_add_test(pSuite, "conn_get_ccerr", test_ngtcp2_conn_get_ccerr) ||
       !CU_add_test(pSuite, "conn_version_negotiation",
                    test_ngtcp2_conn_version_negotiation) ||
       !CU_add_test(pSuite, "conn_server_negotiate_version",
@@ -310,6 +311,8 @@ int main(void) {
       !CU_add_test(pSuite, "conn_pmtud_loss", test_ngtcp2_conn_pmtud_loss) ||
       !CU_add_test(pSuite, "conn_amplification",
                    test_ngtcp2_conn_amplification) ||
+      !CU_add_test(pSuite, "conn_encode_early_transport_params",
+                   test_ngtcp2_conn_encode_early_transport_params) ||
       !CU_add_test(pSuite, "conn_new_failmalloc",
                    test_ngtcp2_conn_new_failmalloc) ||
       !CU_add_test(pSuite, "accept", test_ngtcp2_accept) ||
@@ -338,7 +341,11 @@ int main(void) {
       !CU_add_test(pSuite, "pmtud_probe", test_ngtcp2_pmtud_probe) ||
       !CU_add_test(pSuite, "encode_ipv4", test_ngtcp2_encode_ipv4) ||
       !CU_add_test(pSuite, "encode_ipv6", test_ngtcp2_encode_ipv6) ||
-      !CU_add_test(pSuite, "get_bytes", test_ngtcp2_get_bytes)) {
+      !CU_add_test(pSuite, "get_bytes", test_ngtcp2_get_bytes) ||
+      !CU_add_test(pSuite, "transport_params_convert_to_latest",
+                   test_ngtcp2_transport_params_convert_to_latest) ||
+      !CU_add_test(pSuite, "transport_params_convert_to_old",
+                   test_ngtcp2_transport_params_convert_to_old)) {
     CU_cleanup_registry();
     return (int)CU_get_error();
   }
