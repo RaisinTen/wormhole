@@ -6,6 +6,9 @@
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <thread>
+
+#include <iostream>
 
 namespace wormhole {
 
@@ -122,6 +125,72 @@ Response request(const std::string_view url, RequestOptions options) {
     curl_slist_free_all(request_headers_chunk);
   }
   return data;
+}
+
+/* ----------------------------- WebSocket ------------------------------ */
+
+void WebSocket::send(const std::string &message) {
+  size_t sent = 0;
+  CURLcode res = curl_ws_send(curl_, message.data(), message.length(), &sent, 0,
+                              CURLWS_TEXT);
+
+  if (res != CURLE_OK) {
+    error_ = curl_easy_strerror(res);
+    return;
+  }
+}
+
+void WebSocket::disconnect() {
+  size_t sent;
+  CURLcode res = curl_ws_send(curl_, "", 0, &sent, 0, CURLWS_CLOSE);
+
+  if (res != CURLE_OK) {
+    error_ = curl_easy_strerror(res);
+    return;
+  }
+}
+
+namespace {
+
+struct WebSocketWriteCallbackData {
+  WebSocket *web_socket;
+  std::function<void(WebSocket *, const std::string &)> write_callback;
+};
+
+size_t web_socket_write_callback(char *ptr, size_t size, size_t nmemb,
+                                 void *userdata) {
+  WebSocketWriteCallbackData *web_socket_write_callback_data =
+      static_cast<WebSocketWriteCallbackData *>(userdata);
+  web_socket_write_callback_data->write_callback(
+      web_socket_write_callback_data->web_socket,
+      std::string{const_cast<const char *>(ptr), size * nmemb});
+  return size * nmemb;
+}
+
+} // namespace
+
+void request(
+    const std::string_view url,
+    std::function<void(WebSocket *, const std::string &)> write_callback) {
+  CURL *curl;
+
+  WebSocket web_socket(curl);
+
+  curl = curl_easy_init();
+  if (curl) {
+    curl_easy_setopt(curl, CURLOPT_URL, url.data());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, web_socket_write_callback);
+    WebSocketWriteCallbackData write_callback_data{&web_socket, write_callback};
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &write_callback_data);
+
+    CURLcode res = curl_easy_perform(curl);
+
+    if (res != CURLE_OK) {
+      web_socket.error_ = curl_easy_strerror(res);
+    }
+
+    curl_easy_cleanup(curl);
+  }
 }
 
 } // namespace wormhole
