@@ -130,7 +130,7 @@ Response request(const std::string_view url, RequestOptions options) {
 /* ----------------------------- WebSocket ------------------------------ */
 
 void WebSocket::send(const std::string &message) {
-  size_t sent = 0;
+  size_t sent;
   CURLcode res = curl_ws_send(curl_, message.data(), message.length(), &sent, 0,
                               CURLWS_TEXT);
 
