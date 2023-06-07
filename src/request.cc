@@ -129,25 +129,27 @@ Response request(const std::string_view url, RequestOptions options) {
 
 /* ----------------------------- WebSocket ------------------------------ */
 
-void WebSocket::send(const std::string &message) {
+std::optional<std::string> WebSocket::send(const std::string &message) {
   size_t sent;
   CURLcode res = curl_ws_send(curl_, message.data(), message.length(), &sent, 0,
                               CURLWS_TEXT);
 
   if (res != CURLE_OK) {
-    error_ = curl_easy_strerror(res);
-    return;
+    return curl_easy_strerror(res);
   }
+
+  return std::nullopt;
 }
 
-void WebSocket::disconnect() {
+std::optional<std::string> WebSocket::disconnect() {
   size_t sent;
   CURLcode res = curl_ws_send(curl_, "", 0, &sent, 0, CURLWS_CLOSE);
 
   if (res != CURLE_OK) {
-    error_ = curl_easy_strerror(res);
-    return;
+    return curl_easy_strerror(res);
   }
+
+  return std::nullopt;
 }
 
 namespace {

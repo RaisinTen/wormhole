@@ -115,8 +115,8 @@ private:
   WebSocket(void *curl) : curl_{curl} {}
 
 public:
-  void send(const std::string &message);
-  void disconnect();
+  std::optional<std::string> send(const std::string &message);
+  std::optional<std::string> disconnect();
   std::optional<std::string> get_error() const { return error_; }
 
 private:
