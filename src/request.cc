@@ -174,9 +174,9 @@ void request(
     std::function<void(WebSocket *, const std::string &)> write_callback) {
   CURL *curl;
 
-  WebSocket web_socket(curl);
-
   curl = curl_easy_init();
+
+  WebSocket web_socket(curl);
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_URL, url.data());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, web_socket_write_callback);
