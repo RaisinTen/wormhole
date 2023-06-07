@@ -171,28 +171,32 @@ size_t web_socket_write_callback(char *ptr, size_t size, size_t nmemb,
 
 } // namespace
 
-void request(
-    const std::string_view url,
-    std::function<void(WebSocket *, const std::string &)> write_callback) {
+std::optional<std::string>
+request(const std::string_view url,
+        std::function<void(WebSocket *, const std::string &)> write_callback) {
   CURL *curl;
 
   curl = curl_easy_init();
 
-  WebSocket web_socket(curl);
+  std::optional<std::string> optional_error;
+
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_URL, url.data());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, web_socket_write_callback);
+    WebSocket web_socket(curl);
     WebSocketWriteCallbackData write_callback_data{&web_socket, write_callback};
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &write_callback_data);
 
     CURLcode res = curl_easy_perform(curl);
 
     if (res != CURLE_OK) {
-      web_socket.error_ = curl_easy_strerror(res);
+      optional_error = curl_easy_strerror(res);
     }
 
     curl_easy_cleanup(curl);
   }
+
+  return optional_error;
 }
 
 } // namespace wormhole

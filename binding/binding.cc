@@ -76,57 +76,67 @@ public:
       : Napi::AsyncWorker(env), url_(std::move(url)),
         callback_(callback), tsfn_{Napi::ThreadSafeFunction::New(
                                  env, callback, "WebSocketRequestWorker", 0,
-                                 1)} {}
+                                 1)},
+        deferred_(Napi::Promise::Deferred::New(env)) {}
 
   ~WebSocketRequestWorker() { tsfn_.Release(); }
 
   void Execute() {
-    wormhole::request(url_, [this](wormhole::WebSocket *web_socket,
-                                   const std::string &incoming_message) {
-      napi_status status = tsfn_.BlockingCall([incoming_message, web_socket](
-                                                  Napi::Env env,
-                                                  Napi::Function js_callback) {
-        // TODO(RaisinTen): Find a way to create this object just once and
-        // reusing it instead of constructing it every time this function is
-        // called.
-        Napi::Object handle = Napi::Object::New(env);
-        handle["send"] = Napi::Function::New(
-            env, [web_socket](const Napi::CallbackInfo &info) {
-              Napi::Env env = info.Env();
+    std::optional<std::string> optional_error =
+        wormhole::request(url_, [this](wormhole::WebSocket *web_socket,
+                                       const std::string &incoming_message) {
+          napi_status status = tsfn_.BlockingCall(
+              [incoming_message, web_socket](Napi::Env env,
+                                             Napi::Function js_callback) {
+                // TODO(RaisinTen): Find a way to create this object just once
+                // and reusing it instead of constructing it every time this
+                // function is called.
+                Napi::Object handle = Napi::Object::New(env);
+                handle["send"] = Napi::Function::New(
+                    env, [web_socket](const Napi::CallbackInfo &info) {
+                      Napi::Env env = info.Env();
 
-              if (!info[0].IsString()) {
-                Napi::TypeError::New(env,
-                                     "The first argument needs to be a string.")
-                    .ThrowAsJavaScriptException();
-                return;
-              }
+                      if (!info[0].IsString()) {
+                        Napi::TypeError::New(
+                            env, "The first argument needs to be a string.")
+                            .ThrowAsJavaScriptException();
+                        return;
+                      }
 
-              const std::string message =
-                  info[0].As<Napi::String>().Utf8Value();
+                      const std::string message =
+                          info[0].As<Napi::String>().Utf8Value();
 
-              web_socket->send(message);
-            });
-        handle["disconnect"] = Napi::Function::New(
-            env, [web_socket](const Napi::CallbackInfo &info) {
-              web_socket->disconnect();
-            });
-        js_callback.Call({handle, Napi::String::New(env, incoming_message)});
-      });
-      if (status != napi_ok) {
-        SetError("Napi::ThreadSafeNapi::Function.BlockingCall() failed");
-        return;
-      }
-    });
+                      web_socket->send(message);
+                    });
+                handle["disconnect"] = Napi::Function::New(
+                    env, [web_socket](const Napi::CallbackInfo &info) {
+                      web_socket->disconnect();
+                    });
+                js_callback.Call(
+                    {handle, Napi::String::New(env, incoming_message)});
+              });
+          if (status != napi_ok) {
+            SetError("Napi::ThreadSafeNapi::Function.BlockingCall() failed");
+            return;
+          }
+        });
+
+    if (optional_error.has_value()) {
+      SetError(optional_error.value());
+    }
   }
 
-  void OnOK() { ; }
+  void OnOK() { deferred_.Resolve(Env().Undefined()); }
 
-  void OnError(Napi::Error const &error) { ; }
+  void OnError(Napi::Error const &error) { deferred_.Reject(error.Value()); }
+
+  Napi::Promise GetPromise() const { return deferred_.Promise(); }
 
 private:
   std::string url_;
   Napi::Function callback_;
   Napi::ThreadSafeFunction tsfn_;
+  Napi::Promise::Deferred deferred_;
 };
 
 Napi::Value Request(const Napi::CallbackInfo &info) {
@@ -284,8 +294,9 @@ Napi::Value WebSocketRequest(const Napi::CallbackInfo &info) {
 
   WebSocketRequestWorker *worker =
       new WebSocketRequestWorker(env, url, callback);
+  auto promise = worker->GetPromise();
   worker->Queue();
-  return callback;
+  return promise;
 }
 
 Napi::Object InitAll(Napi::Env env, Napi::Object exports) {
