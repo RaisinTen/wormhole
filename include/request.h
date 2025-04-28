@@ -110,6 +110,26 @@ struct Response {
 Response request(const std::string_view url,
                  RequestOptions options = RequestOptionsBuilder().build());
 
+class WebSocket {
+private:
+  WebSocket(void *curl) : curl_{curl} {}
+
+public:
+  std::optional<std::string> send(const std::string &message);
+  std::optional<std::string> disconnect();
+
+private:
+  void *curl_;
+
+  friend std::optional<std::string>
+  request(const std::string_view url,
+          std::function<void(WebSocket *, const std::string &)> write_callback);
+};
+
+std::optional<std::string>
+request(const std::string_view url,
+        std::function<void(WebSocket *, const std::string &)> write_callback);
+
 } // namespace wormhole
 
 #endif // WORMHOLE_REQUEST_H_
